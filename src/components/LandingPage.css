@@ -1,0 +1,16 @@
+.landing-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+}
+
+.landing-page-column {
+  width: 500px;
+  max-width: calc(100% - 40px);
+  padding-top: 192px;
+  padding-bottom: 140px;
+  display: flex;
+  flex-direction: column;
+}

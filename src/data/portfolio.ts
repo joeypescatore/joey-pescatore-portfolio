@@ -1,0 +1,93 @@
+export const profile = {
+  bioLine1: "I'm a product designer based in New York City.",
+  bioLine2Prefix: 'Currently helping build software at ',
+  bioLink: { label: 'Merge', href: 'https://www.merge.dev/' },
+  bioParagraph2:
+    "I've spent more than six years designing for or being featured by startups and public figures like Adobe, OpenSea, Live Nation, Travis Scott, Bryce Vine and more.",
+}
+
+export const socialLinks = [
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },
+  { label: 'X / Twitter', href: 'https://x.com/joeypescatore_' },
+  { label: 'GitHub', href: 'https://github.com/joeypescatore' },
+  { label: 'Spotify', href: 'https://open.spotify.com/user/phillyball25?si=8f2c2a3a4f8f4dd6' },
+  { label: 'Resume', href: 'https://drive.google.com/file/d/1nNFqn0XJ2HbIXkSzQsRXXoVKdIzztoTm/view?usp=sharing' },
+]
+
+export const experience = [
+  { startYear: '2026', title: 'Product Designer', company: 'Merge' },
+  { startYear: '2025', title: 'Founding Product Designer', company: 'Eventual' },
+  { startYear: '2024', title: 'Product Designer, Growth', company: 'HHW' },
+  { startYear: '2022', title: 'Lead Designer', company: 'Cartoons.io' },
+  { startYear: '2018', title: 'Visual Designer', company: 'Freelance' },
+]
+
+export const caseStudies = [
+  {
+    image: 'https://framerusercontent.com/images/aETKCoxzAcMiSISxyAR2SdsbRg.jpg?width=2322&height=2423',
+    title: 'Shaping A Complicated Rollout For Widespread Adoption',
+    company: 'Eventual',
+    year: '2026',
+    href: 'https://www.joeypescatore.com/eventual',
+  },
+  {
+    image: 'https://framerusercontent.com/images/IkC14o2iI9kF89WTKdD74uGY3wM.jpg?width=2322&height=1475',
+    title: 'Reinventing How Fans Review & Discover Music',
+    company: 'Wavform',
+    year: '2025',
+    href: 'https://www.joeypescatore.com/wavform',
+  },
+  {
+    image: 'https://framerusercontent.com/images/V5Rk4s0Sho0scGNZPLBS5YJNtI.jpg?width=2322&height=2423',
+    title: 'Design Language & Web Overhaul For Holistic Health',
+    company: 'HHW',
+    year: '2025',
+    href: 'https://www.joeypescatore.com/hhw',
+  },
+]
+
+export const writings = [
+  {
+    title: 'AI and Its Place in Design',
+    date: 'Aug 23',
+    badge: 'New',
+  },
+  {
+    title: "Spend More Time on Why You Shouldn't Build It",
+    date: 'Coming Soon',
+    comingSoon: true,
+  },
+]
+
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="180"><rect width="280" height="180" fill="#EBEBEB"/></svg>',
+  )
+
+export const sideProjects = [
+  {
+    title: 'AaFonts',
+    description: 'Font inspiration library',
+    image: PLACEHOLDER_IMAGE,
+    href: 'https://aafonts.vercel.app/',
+  },
+  {
+    title: 'Wavform',
+    description: 'Letterboxd, but for music',
+    image: PLACEHOLDER_IMAGE,
+    href: 'https://apps.apple.com/us/app/wavform/id6670220932',
+  },
+  {
+    title: 'Pulse²',
+    description: 'Docs on random topics',
+    image: PLACEHOLDER_IMAGE,
+    href: 'https://www.youtube.com/@PulseSquared/videos',
+  },
+  {
+    title: 'Outrspce',
+    description: 'Ambient music project',
+    image: PLACEHOLDER_IMAGE,
+    href: 'https://open.spotify.com/artist/13gXQCviBL36w5CKWtVESO?si=Uw-w8bqjSCWAgzSuEY6XQA',
+  },
+]

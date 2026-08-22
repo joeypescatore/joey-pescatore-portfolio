@@ -1,0 +1,64 @@
+.floating-nav-anchor {
+  position: fixed;
+  left: 0;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 50;
+}
+
+.floating-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  border: 1px solid #f0f0f0;
+}
+
+.floating-nav-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background-color: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: #8d8d8d;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.floating-nav-icon:hover {
+  background-color: #f4f4f4;
+  color: #171717;
+}
+
+.floating-nav-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: #171717;
+  white-space: nowrap;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms ease;
+}
+
+.floating-nav-icon:hover .floating-nav-tooltip {
+  opacity: 1;
+}
