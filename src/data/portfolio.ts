@@ -1,3 +1,8 @@
+import wavformPreview from '../assets/wavform-in-app-event.jpg'
+import outrspcePreview from '../assets/outrspce-spotify.png'
+import pulse2Preview from '../assets/pulse2-youtube.png'
+import aafontsPreview from '../assets/aafonts-app.png'
+
 export const profile = {
   bioLine1: "I'm a product designer based in New York City.",
   bioLine2Prefix: 'Currently helping build software at ',
@@ -59,35 +64,29 @@ export const writings = [
   },
 ]
 
-const PLACEHOLDER_IMAGE =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="180"><rect width="280" height="180" fill="#EBEBEB"/></svg>',
-  )
-
 export const sideProjects = [
-  {
-    title: 'AaFonts',
-    description: 'Font inspiration library',
-    image: PLACEHOLDER_IMAGE,
-    href: 'https://aafonts.vercel.app/',
-  },
   {
     title: 'Wavform',
     description: 'Letterboxd, but for music',
-    image: PLACEHOLDER_IMAGE,
+    image: wavformPreview,
     href: 'https://apps.apple.com/us/app/wavform/id6670220932',
   },
   {
     title: 'Pulse²',
-    description: 'Docs on random topics',
-    image: PLACEHOLDER_IMAGE,
+    description: 'Video docs on random topics',
+    image: pulse2Preview,
     href: 'https://www.youtube.com/@PulseSquared/videos',
   },
   {
     title: 'Outrspce',
-    description: 'Ambient music project',
-    image: PLACEHOLDER_IMAGE,
+    description: 'Ambient music',
+    image: outrspcePreview,
     href: 'https://open.spotify.com/artist/13gXQCviBL36w5CKWtVESO?si=Uw-w8bqjSCWAgzSuEY6XQA',
+  },
+  {
+    title: 'AaFonts',
+    description: 'Font inspiration library',
+    image: aafontsPreview,
+    href: 'https://aafonts.vercel.app/',
   },
 ]
