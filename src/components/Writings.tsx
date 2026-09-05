@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { writings } from '../data/portfolio'
+import { staggerDelay } from '../utils/stagger'
 import './Writings.css'
 
 export function Writings() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
-    <section className="writings">
+    <section className="writings stagger-in" style={staggerDelay(4)}>
       <div className="section-label">Writings</div>
       <div
         className={`writings-list${hoveredIndex !== null ? ' is-hovering' : ''}`}

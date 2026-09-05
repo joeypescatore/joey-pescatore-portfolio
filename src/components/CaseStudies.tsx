@@ -1,5 +1,6 @@
 import { caseStudies } from '../data/portfolio'
 import { useCursorPreview } from '../hooks/useCursorPreview'
+import { staggerDelay } from '../utils/stagger'
 import './CaseStudies.css'
 
 export function CaseStudies() {
@@ -10,27 +11,29 @@ export function CaseStudies() {
 
   return (
     <section id="case-studies" className="case-studies">
-      <div className="section-label">Projects</div>
+      <div className="case-studies-content stagger-in" style={staggerDelay(5)}>
+        <div className="section-label">Projects</div>
 
-      <div
-        className={`case-studies-list${hoveredIndex !== null ? ' is-hovering' : ''}`}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        {caseStudies.map((item, index) => (
-          <a
-            key={item.title}
-            href={item.href}
-            className={`case-study-row${hoveredIndex === index ? ' is-active' : ''}`}
-            onMouseEnter={() => setHoveredIndex(index)}
-          >
-            <div className="case-study-title">{item.title}</div>
-            <div className="case-study-right">
-              <div className="case-study-company">{item.company}</div>
-              <span className="case-study-arrow">&#8594;</span>
-            </div>
-          </a>
-        ))}
+        <div
+          className={`case-studies-list${hoveredIndex !== null ? ' is-hovering' : ''}`}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {caseStudies.map((item, index) => (
+            <a
+              key={item.title}
+              href={item.href}
+              className={`case-study-row${hoveredIndex === index ? ' is-active' : ''}`}
+              onMouseEnter={() => setHoveredIndex(index)}
+            >
+              <div className="case-study-title">{item.title}</div>
+              <div className="case-study-right">
+                <div className="case-study-company">{item.company}</div>
+                <span className="case-study-arrow">&#8594;</span>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
 
       <div

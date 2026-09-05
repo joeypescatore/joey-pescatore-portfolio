@@ -7,17 +7,24 @@ export const profile = {
   bioLine1: "I'm a product designer based in New York City.",
   bioLine2Prefix: 'Currently helping build software at ',
   bioLink: { label: 'Merge', href: 'https://www.merge.dev/' },
-  bioParagraph2:
-    "I've spent more than six years designing for or being featured by startups and public figures like Adobe, OpenSea, Live Nation, Travis Scott, Bryce Vine and more.",
+  bioParagraph2Prefix: 'Before that, I was the founding product designer at ',
+  eventualLink: { label: 'Eventual', href: 'https://eventualclimate.com/' },
+  bioParagraph2Middle:
+    ' and other early stage startups. In a previous life I spent years freelancing in the entertainment industry, doing creative work for labels/artists like ',
+  cactusJackLink: { label: 'Cactus Jack (Travis Scott)', href: 'https://www.reddit.com/r/SoFaygo/s/DcFZSzrqdo' },
+  republicRecordsLink: {
+    label: 'Republic Records',
+    href: 'https://www.youtube.com/playlist?list=PLaiW-gZtXntFkM4tBGw5iMg1PS0YTp2AY',
+  },
+  columbiaRecordsLink: {
+    label: 'Columbia Records',
+    href: 'https://www.youtube.com/playlist?list=PLaiW-gZtXntFkM4tBGw5iMg1PS0YTp2AY',
+  },
+  contactPrefix: 'You can reach me on ',
+  twitterLink: { label: 'Twitter/X', href: 'https://x.com/joeypescatore_' },
+  linkedinLink: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },
+  emailLink: { label: 'email', href: 'mailto:jpesco25@gmail.com' },
 }
-
-export const socialLinks = [
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },
-  { label: 'X / Twitter', href: 'https://x.com/joeypescatore_' },
-  { label: 'GitHub', href: 'https://github.com/joeypescatore' },
-  { label: 'Spotify', href: 'https://open.spotify.com/user/phillyball25?si=8f2c2a3a4f8f4dd6' },
-  { label: 'Resume', href: 'https://drive.google.com/file/d/1nNFqn0XJ2HbIXkSzQsRXXoVKdIzztoTm/view?usp=sharing' },
-]
 
 export const experience = [
   { startYear: '2026', title: 'Product Designer', company: 'Merge' },

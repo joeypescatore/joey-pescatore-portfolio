@@ -10,6 +10,11 @@
   position: relative;
   width: fit-content;
   transition-property: transform;
+  display: block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .sprite-icon {

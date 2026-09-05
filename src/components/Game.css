@@ -1,0 +1,148 @@
+.game-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-color: #ffffff;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.game-quit {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
+  border: none;
+  border-radius: 20px;
+  background-color: #f4f4f4;
+  cursor: pointer;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #111111;
+}
+
+.game-quit-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background-color: #f6f6f6;
+  border: 0.5px solid #e4e4e4;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8c8c8c;
+}
+
+.game-score {
+  position: absolute;
+  right: 32px;
+  top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.game-score-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.game-score-value {
+  font-family: 'Geist Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111111;
+}
+
+.game-lane {
+  position: relative;
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.game-platform {
+  position: absolute;
+  border-radius: 7px;
+  background-color: #0a0a0a;
+}
+
+.game-platform.is-breakable {
+  background-color: #ffffff;
+  border: 1px dashed #0a0a0a;
+}
+
+.game-character {
+  position: absolute;
+  color: #0a0a0a;
+}
+
+.game-character svg rect {
+  fill: currentColor;
+}
+
+.game-over {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 40px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.game-over-title {
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #111111;
+}
+
+.game-over-score {
+  font-family: 'Geist Mono', monospace;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.game-over-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-over-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f4f4f4;
+  cursor: pointer;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #111111;
+}
+
+.game-over-button-primary {
+  background-color: #171717;
+  color: #ffffff;
+}

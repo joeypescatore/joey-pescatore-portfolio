@@ -10,7 +10,7 @@ function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min)
 }
 
-export function Sprite() {
+export function Sprite({ onPlay }: { onPlay: () => void }) {
   const [x, setX] = useState(0)
   const [facing, setFacing] = useState<1 | -1>(1)
   const [isMoving, setIsMoving] = useState(false)
@@ -82,8 +82,10 @@ export function Sprite() {
 
   return (
     <div className="sprite-track" ref={trackRef}>
-      <div
+      <button
+        type="button"
         className="sprite-walker"
+        onClick={onPlay}
         style={{
           transform: `translateX(${x}px)`,
           transitionDuration: `${moveDuration}ms`,
@@ -122,8 +124,8 @@ export function Sprite() {
             </>
           )}
         </svg>
-        <span className="sprite-tooltip">holly</span>
-      </div>
+        <span className="sprite-tooltip">Click to play</span>
+      </button>
     </div>
   )
 }
