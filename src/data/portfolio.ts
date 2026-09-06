@@ -1,7 +1,7 @@
 import wavformPreview from '../assets/wavform-in-app-event.jpg'
 import outrspcePreview from '../assets/outrspce-spotify.png'
 import pulse2Preview from '../assets/pulse2-youtube.png'
-import aafontsPreview from '../assets/aafonts-app.png'
+import inkinPreview from '../assets/inkin-thumbnail.jpg'
 
 export const profile = {
   bioLine1: "I'm a product designer based in New York City.",
@@ -63,6 +63,7 @@ export const writings = [
     title: 'AI and Its Place in Design',
     date: 'Aug 23',
     badge: 'New',
+    slug: 'ai-and-its-place-in-design',
   },
   {
     title: "Spend More Time on Why You Shouldn't Build It",
@@ -72,6 +73,12 @@ export const writings = [
 ]
 
 export const sideProjects = [
+  {
+    title: 'Inkin (Coming Soon)',
+    description: 'A modern word processor',
+    image: inkinPreview,
+    href: 'https://x.com/joeypescatore_/status/2095846880064176231?s=20',
+  },
   {
     title: 'Wavform',
     description: 'Letterboxd, but for music',
@@ -89,11 +96,5 @@ export const sideProjects = [
     description: 'Ambient music',
     image: outrspcePreview,
     href: 'https://open.spotify.com/artist/13gXQCviBL36w5CKWtVESO?si=Uw-w8bqjSCWAgzSuEY6XQA',
-  },
-  {
-    title: 'AaFonts',
-    description: 'Font inspiration library',
-    image: aafontsPreview,
-    href: 'https://aafonts.vercel.app/',
   },
 ]

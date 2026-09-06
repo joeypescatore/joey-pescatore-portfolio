@@ -3,7 +3,7 @@ import { writings } from '../data/portfolio'
 import { staggerDelay } from '../utils/stagger'
 import './Writings.css'
 
-export function Writings() {
+export function Writings({ onOpenPost }: { onOpenPost: (slug: string) => void }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
@@ -24,10 +24,12 @@ export function Writings() {
               </div>
             </div>
           ) : (
-            <div
+            <button
               key={item.title}
+              type="button"
               className={`writing-row${hoveredIndex === index ? ' is-active' : ''}`}
               onMouseEnter={() => setHoveredIndex(index)}
+              onClick={() => item.slug && onOpenPost(item.slug)}
             >
               <div className="writing-left">
                 <span className="writing-title">{item.title}</span>
@@ -37,7 +39,7 @@ export function Writings() {
                 <span className="writing-date">{item.date}</span>
                 <span className="writing-arrow">&#8594;</span>
               </div>
-            </div>
+            </button>
           ),
         )}
       </div>

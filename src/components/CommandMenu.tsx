@@ -40,12 +40,20 @@ const writingItems: MenuItem[] = [
   },
 ]
 
-export function CommandMenu() {
+export function CommandMenu({ onOpenPost }: { onOpenPost: (slug: string) => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const flatItems = useMemo(() => [...navItems, ...writingItems], [])
+
+  function handleSelect(item: MenuItem) {
+    const isWritingItem = writingItems.some((writingItem) => writingItem.id === item.id)
+    if (isWritingItem) {
+      onOpenPost(item.id)
+      setIsOpen(false)
+    }
+  }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -79,12 +87,13 @@ export function CommandMenu() {
 
       if (event.key === 'Enter') {
         event.preventDefault()
+        handleSelect(flatItems[selectedIndex])
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, flatItems.length])
+  }, [isOpen, flatItems, selectedIndex])
 
   useEffect(() => {
     if (isOpen) {
@@ -136,6 +145,7 @@ export function CommandMenu() {
                 item={item}
                 isSelected={index === selectedIndex}
                 onHover={() => setSelectedIndex(index)}
+                onSelect={() => handleSelect(item)}
               />
             )
           })}
@@ -149,16 +159,19 @@ function Row({
   item,
   isSelected,
   onHover,
+  onSelect,
 }: {
   item: MenuItem
   isSelected: boolean
   onHover: () => void
+  onSelect?: () => void
 }) {
   const Icon = item.icon
   return (
     <div
       className={`cmdk-row${isSelected ? ' is-selected' : ''}`}
       onMouseEnter={onHover}
+      onClick={onSelect}
     >
       <div className="cmdk-row-icon">
         <Icon size={18} color={isSelected ? SELECTED_COLOR : UNSELECTED_COLOR} />
