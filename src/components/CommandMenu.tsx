@@ -26,17 +26,10 @@ const navItems: MenuItem[] = [
 
 const writingItems: MenuItem[] = [
   {
-    id: 'ai-and-its-place-in-design',
-    label: 'AI and Its Place in Design',
+    id: 'designing-how-waiting-is-perceived',
+    label: 'Designing How Waiting Is Perceived',
     icon: IconArrowRight,
     shortcut: '1',
-    badge: 'New',
-  },
-  {
-    id: 'spend-more-time-on-why-you-shouldnt-build-it',
-    label: "Spend More Time on Why You Shouldn't Build It",
-    icon: IconArrowRight,
-    shortcut: '2',
   },
 ]
 
