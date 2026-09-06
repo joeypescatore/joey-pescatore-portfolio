@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CommandMenu } from './components/CommandMenu'
 import { LandingPage } from './components/LandingPage'
 import { Game } from './components/Game'
@@ -8,6 +8,10 @@ import { posts } from './data/posts'
 function App() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [openPostSlug, setOpenPostSlug] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [isPlaying, openPostSlug])
 
   if (isPlaying) {
     return <Game onQuit={() => setIsPlaying(false)} />

@@ -58,15 +58,17 @@ export const caseStudies = [
   },
 ]
 
-export const writings = [
+type Writing = {
+  title: string
+  date: string
+  comingSoon?: boolean
+  badge?: string
+  slug?: string
+}
+
+export const writings: Writing[] = [
   {
-    title: 'AI and Its Place in Design',
-    date: 'Aug 23',
-    badge: 'New',
-    slug: 'ai-and-its-place-in-design',
-  },
-  {
-    title: "Spend More Time on Why You Shouldn't Build It",
+    title: 'Designing How Waiting Is Perceived',
     date: 'Coming Soon',
     comingSoon: true,
   },
