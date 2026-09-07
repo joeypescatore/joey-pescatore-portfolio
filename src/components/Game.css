@@ -9,6 +9,7 @@
 
 .game-quit {
   position: absolute;
+  z-index: 1;
   left: 32px;
   top: 32px;
   display: flex;
@@ -43,12 +44,25 @@
 
 .game-score {
   position: absolute;
+  z-index: 1;
   right: 32px;
   top: 32px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+}
+
+@media (max-width: 480px) {
+  .game-quit {
+    left: 16px;
+    top: 16px;
+  }
+
+  .game-score {
+    right: 16px;
+    top: 16px;
+  }
 }
 
 .game-score-label {

@@ -113,3 +113,13 @@
 .case-study-preview-image.is-active {
   opacity: 1;
 }
+
+@media (hover: none) {
+  .case-study-preview {
+    display: none;
+  }
+
+  .case-studies-list.is-hovering .case-study-row:not(.is-active) {
+    opacity: 1;
+  }
+}

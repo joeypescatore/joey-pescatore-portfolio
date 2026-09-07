@@ -3,7 +3,7 @@ import { useCursorPreview } from '../hooks/useCursorPreview'
 import { staggerDelay } from '../utils/stagger'
 import './CaseStudies.css'
 
-export function CaseStudies() {
+export function CaseStudies({ onOpenCaseStudy }: { onOpenCaseStudy: (slug: string) => void }) {
   const { hoveredIndex, setHoveredIndex, previewX, previewY, handleMouseMove, handleMouseLeave } = useCursorPreview({
     width: 200,
     height: 130,
@@ -22,9 +22,17 @@ export function CaseStudies() {
           {caseStudies.map((item, index) => (
             <a
               key={item.title}
-              href={item.href}
+              href={item.slug ? undefined : item.href}
               className={`case-study-row${hoveredIndex === index ? ' is-active' : ''}`}
               onMouseEnter={() => setHoveredIndex(index)}
+              onClick={
+                item.slug
+                  ? (event) => {
+                      event.preventDefault()
+                      onOpenCaseStudy(item.slug!)
+                    }
+                  : undefined
+              }
             >
               <div className="case-study-title">{item.title}</div>
               <div className="case-study-right">

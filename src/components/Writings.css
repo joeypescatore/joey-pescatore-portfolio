@@ -112,3 +112,9 @@
 .writing-row.is-disabled .writing-date {
   color: rgba(0, 0, 0, 0.28);
 }
+
+@media (hover: none) {
+  .writings-list.is-hovering .writing-row:not(.is-active):not(.is-disabled) {
+    opacity: 1;
+  }
+}

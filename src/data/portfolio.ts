@@ -2,6 +2,7 @@ import wavformPreview from '../assets/wavform-in-app-event.jpg'
 import outrspcePreview from '../assets/outrspce-spotify.png'
 import pulse2Preview from '../assets/pulse2-youtube.png'
 import inkinPreview from '../assets/inkin-thumbnail.jpg'
+import eventualThumbnail from '../assets/eventual/hero.jpg'
 
 export const profile = {
   bioLine1: "I'm a product designer based in New York City.",
@@ -34,13 +35,22 @@ export const experience = [
   { startYear: '2018', title: 'Visual Designer', company: 'Freelance' },
 ]
 
-export const caseStudies = [
+type CaseStudy = {
+  image: string
+  title: string
+  company: string
+  year: string
+  href?: string
+  slug?: string
+}
+
+export const caseStudies: CaseStudy[] = [
   {
-    image: 'https://framerusercontent.com/images/aETKCoxzAcMiSISxyAR2SdsbRg.jpg?width=2322&height=2423',
+    image: eventualThumbnail,
     title: 'Shaping A Complicated Rollout For Widespread Adoption',
     company: 'Eventual',
     year: '2026',
-    href: 'https://www.joeypescatore.com/eventual',
+    slug: 'eventual',
   },
   {
     image: 'https://framerusercontent.com/images/IkC14o2iI9kF89WTKdD74uGY3wM.jpg?width=2322&height=1475',
@@ -76,8 +86,8 @@ export const writings: Writing[] = [
 
 export const sideProjects = [
   {
-    title: 'Inkin (Coming Soon)',
-    description: 'A modern word processor',
+    title: 'Inkin',
+    description: 'Coming Soon',
     image: inkinPreview,
     href: 'https://x.com/joeypescatore_/status/2095846880064176231?s=20',
   },

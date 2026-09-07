@@ -113,3 +113,13 @@
 .side-project-preview-image.is-active {
   opacity: 1;
 }
+
+@media (hover: none) {
+  .side-project-preview {
+    display: none;
+  }
+
+  .side-projects-list.is-hovering .side-project-row:not(.is-active) {
+    opacity: 1;
+  }
+}
