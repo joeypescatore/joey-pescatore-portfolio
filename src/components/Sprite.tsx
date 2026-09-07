@@ -10,7 +10,19 @@ function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min)
 }
 
-export function Sprite({ onPlay }: { onPlay: () => void }) {
+// reads the current interpolated translateX off the element mid-transition,
+// so a hover-triggered pause freezes him exactly where he stands rather than
+// snapping to whichever end of the hop he was walking toward
+function getCurrentTranslateX(el: HTMLElement) {
+  const transform = getComputedStyle(el).transform
+  if (transform === 'none') return 0
+  const match = transform.match(/matrix\(([^)]+)\)/)
+  if (!match) return 0
+  const parts = match[1].split(',').map((n) => parseFloat(n.trim()))
+  return parts[4] ?? 0
+}
+
+export function Sprite() {
   const [x, setX] = useState(0)
   const [facing, setFacing] = useState<1 | -1>(1)
   const [isMoving, setIsMoving] = useState(false)
@@ -19,10 +31,13 @@ export function Sprite({ onPlay }: { onPlay: () => void }) {
   const [moveSteps, setMoveSteps] = useState(6)
   const [stepInterval, setStepInterval] = useState(200)
   const trackRef = useRef<HTMLDivElement>(null)
+  const walkerRef = useRef<HTMLButtonElement>(null)
   const xRef = useRef(0)
   const rangeRef = useRef(0)
   const moveTimeoutRef = useRef<number | undefined>(undefined)
   const settleTimeoutRef = useRef<number | undefined>(undefined)
+  const isPausedRef = useRef(false)
+  const performMoveRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const track = trackRef.current
@@ -58,13 +73,19 @@ export function Sprite({ onPlay }: { onPlay: () => void }) {
       // the next one, so moves never interrupt/re-target each other mid-flight
       settleTimeoutRef.current = window.setTimeout(() => {
         setIsMoving(false)
+        if (isPausedRef.current) return
         const pause = randomBetween(1200, 3500)
         moveTimeoutRef.current = window.setTimeout(performMove, pause)
       }, duration)
     }
 
+    performMoveRef.current = performMove
+
     const initialPause = randomBetween(1200, 3500)
-    moveTimeoutRef.current = window.setTimeout(performMove, initialPause)
+    moveTimeoutRef.current = window.setTimeout(() => {
+      if (!isPausedRef.current) performMove()
+    }, initialPause)
+
     return () => {
       window.clearTimeout(moveTimeoutRef.current)
       window.clearTimeout(settleTimeoutRef.current)
@@ -80,12 +101,35 @@ export function Sprite({ onPlay }: { onPlay: () => void }) {
     return () => window.clearInterval(interval)
   }, [isMoving, stepInterval])
 
+  function handleMouseEnter() {
+    isPausedRef.current = true
+    window.clearTimeout(moveTimeoutRef.current)
+    if (isMoving && walkerRef.current) {
+      const currentX = getCurrentTranslateX(walkerRef.current)
+      window.clearTimeout(settleTimeoutRef.current)
+      xRef.current = currentX
+      setMoveDuration(0)
+      setX(currentX)
+      setIsMoving(false)
+    }
+  }
+
+  function handleMouseLeave() {
+    isPausedRef.current = false
+    if (!isMoving) {
+      window.clearTimeout(moveTimeoutRef.current)
+      moveTimeoutRef.current = window.setTimeout(() => performMoveRef.current(), randomBetween(300, 800))
+    }
+  }
+
   return (
     <div className="sprite-track" ref={trackRef}>
       <button
         type="button"
         className="sprite-walker"
-        onClick={onPlay}
+        ref={walkerRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
           transform: `translateX(${x}px)`,
           transitionDuration: `${moveDuration}ms`,
@@ -124,7 +168,7 @@ export function Sprite({ onPlay }: { onPlay: () => void }) {
             </>
           )}
         </svg>
-        <span className="sprite-tooltip">Click to play</span>
+        <span className="sprite-tooltip">I'm Ovid. I'll be useful soon.</span>
       </button>
     </div>
   )

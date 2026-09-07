@@ -1,9 +1,10 @@
+import { Link } from 'react-router-dom'
 import { caseStudies } from '../data/portfolio'
 import { useCursorPreview } from '../hooks/useCursorPreview'
 import { staggerDelay } from '../utils/stagger'
 import './CaseStudies.css'
 
-export function CaseStudies({ onOpenCaseStudy }: { onOpenCaseStudy: (slug: string) => void }) {
+export function CaseStudies() {
   const { hoveredIndex, setHoveredIndex, previewX, previewY, handleMouseMove, handleMouseLeave } = useCursorPreview({
     width: 200,
     height: 130,
@@ -19,28 +20,42 @@ export function CaseStudies({ onOpenCaseStudy }: { onOpenCaseStudy: (slug: strin
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          {caseStudies.map((item, index) => (
-            <a
-              key={item.title}
-              href={item.slug ? undefined : item.href}
-              className={`case-study-row${hoveredIndex === index ? ' is-active' : ''}`}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onClick={
-                item.slug
-                  ? (event) => {
-                      event.preventDefault()
-                      onOpenCaseStudy(item.slug!)
-                    }
-                  : undefined
-              }
-            >
-              <div className="case-study-title">{item.title}</div>
-              <div className="case-study-right">
-                <div className="case-study-company">{item.company}</div>
-                <span className="case-study-arrow">&#8594;</span>
-              </div>
-            </a>
-          ))}
+          {caseStudies.map((item, index) => {
+            const rowClassName = `case-study-row${hoveredIndex === index ? ' is-active' : ''}`
+            const content = (
+              <>
+                <div className="case-study-title">{item.title}</div>
+                <div className="case-study-right">
+                  <div className="case-study-company">{item.company}</div>
+                  <span className="case-study-arrow">&#8594;</span>
+                </div>
+              </>
+            )
+
+            if (item.slug) {
+              return (
+                <Link
+                  key={item.title}
+                  to={`/${item.slug}`}
+                  className={rowClassName}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                >
+                  {content}
+                </Link>
+              )
+            }
+
+            return (
+              <a
+                key={item.title}
+                href={item.href}
+                className={rowClassName}
+                onMouseEnter={() => setHoveredIndex(index)}
+              >
+                {content}
+              </a>
+            )
+          })}
         </div>
       </div>
 

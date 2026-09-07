@@ -175,7 +175,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
 
             <section id="market-landscape" className="post-section">
               <div className="case-study-section-eyebrow">Market Landscape</div>
-              <img className="case-study-image" src={marketLandscape1} alt="" />
+              <img className="case-study-image" src={marketLandscape1} alt="Quadrant chart comparing Wavform to Pitchfork, AOTY, RYM, and Musicboard on complexity and community" />
 
               <div className="case-study-feature">
                 <h3 className="post-section-heading">Pitchfork (Traditional Music Blogs)</h3>
@@ -205,7 +205,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
                 </p>
               </div>
 
-              <img className="case-study-image" src={marketLandscape2} alt="" />
+              <img className="case-study-image" src={marketLandscape2} alt="Screenshots of competing music review platforms Pitchfork and Musicboard" />
             </section>
 
             <section id="design-process" className="post-section">
@@ -216,7 +216,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
                 Spotify integration application, so the goal was to take this idea and develop it into a product
                 ready for market.
               </p>
-              <img className="case-study-image" src={designProcessImage} alt="" />
+              <img className="case-study-image" src={designProcessImage} alt="Wavform quote generation loading screen shown on a laptop mockup" />
             </section>
 
             <section id="features" className="post-section">
@@ -231,7 +231,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
                   retention problem, over 50% of users weren't following anyone, so we introduced an Everyone tab,
                   giving new users content to browse from day one regardless of who they follow.
                 </p>
-                <img className="case-study-image" src={homepageImage} alt="" />
+                <img className="case-study-image" src={homepageImage} alt="Redesigned Wavform homepage feed with a vertical scroll and an Everyone tab" />
               </div>
 
               <div className="case-study-feature">
@@ -242,7 +242,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
                   leave a rating. The fix was simple: move it into the navigation bar, so no matter where you are,
                   you're always one tap away from rating whatever's playing.
                 </p>
-                <img className="case-study-image" src={currentlyListeningImage} alt="" />
+                <img className="case-study-image" src={currentlyListeningImage} alt="Currently Listening To rating control moved into the navigation bar" />
               </div>
 
               <div className="case-study-feature">
@@ -252,13 +252,13 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
                   users would actually want to share, so the redesign focused on hierarchy and giving people a
                   better way to showcase their favorites and recent activity.
                 </p>
-                <img className="case-study-image" src={userProfileImage} alt="" />
+                <img className="case-study-image" src={userProfileImage} alt="Redesigned Wavform user profile showcasing favorites and recent activity" />
               </div>
             </section>
 
             <section id="final-designs" className="post-section">
               <div className="case-study-section-eyebrow">Final Designs</div>
-              <img className="case-study-image case-study-image--portrait" src={finalDesignsImage} alt="" />
+              <img className="case-study-image case-study-image--portrait" src={finalDesignsImage} alt="Grid of final Wavform screen designs, including sign in, stats, and settings" />
             </section>
           </article>
         </main>

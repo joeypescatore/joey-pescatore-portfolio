@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { writings } from '../data/portfolio'
 import { staggerDelay } from '../utils/stagger'
 import './Writings.css'
 
-export function Writings({ onOpenPost }: { onOpenPost: (slug: string) => void }) {
+export function Writings() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
@@ -14,7 +15,7 @@ export function Writings({ onOpenPost }: { onOpenPost: (slug: string) => void })
         onMouseLeave={() => setHoveredIndex(null)}
       >
         {writings.map((item, index) =>
-          item.comingSoon ? (
+          item.comingSoon || !item.slug ? (
             <div key={item.title} className="writing-row is-disabled">
               <div className="writing-left">
                 <span className="writing-title">{item.title}</span>
@@ -24,12 +25,11 @@ export function Writings({ onOpenPost }: { onOpenPost: (slug: string) => void })
               </div>
             </div>
           ) : (
-            <button
+            <Link
               key={item.title}
-              type="button"
+              to={`/writing/${item.slug}`}
               className={`writing-row${hoveredIndex === index ? ' is-active' : ''}`}
               onMouseEnter={() => setHoveredIndex(index)}
-              onClick={() => item.slug && onOpenPost(item.slug)}
             >
               <div className="writing-left">
                 <span className="writing-title">{item.title}</span>
@@ -39,7 +39,7 @@ export function Writings({ onOpenPost }: { onOpenPost: (slug: string) => void })
                 <span className="writing-date">{item.date}</span>
                 <span className="writing-arrow">&#8594;</span>
               </div>
-            </button>
+            </Link>
           ),
         )}
       </div>
