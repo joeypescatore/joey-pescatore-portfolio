@@ -3,6 +3,8 @@ import outrspcePreview from '../assets/outrspce-spotify.png'
 import pulse2Preview from '../assets/pulse2-youtube.png'
 import inkinPreview from '../assets/inkin-thumbnail.jpg'
 import eventualThumbnail from '../assets/eventual/hero.jpg'
+import wavformThumbnail from '../assets/wavform/thumbnail.jpg'
+// import hhwThumbnail from '../assets/hhw/thumbnail.jpg'
 
 export const profile = {
   bioLine1: "I'm a product designer based in New York City.",
@@ -53,19 +55,19 @@ export const caseStudies: CaseStudy[] = [
     slug: 'eventual',
   },
   {
-    image: 'https://framerusercontent.com/images/IkC14o2iI9kF89WTKdD74uGY3wM.jpg?width=2322&height=1475',
+    image: wavformThumbnail,
     title: 'Reinventing How Fans Review & Discover Music',
     company: 'Wavform',
     year: '2025',
-    href: 'https://www.joeypescatore.com/wavform',
+    slug: 'wavform',
   },
-  {
-    image: 'https://framerusercontent.com/images/V5Rk4s0Sho0scGNZPLBS5YJNtI.jpg?width=2322&height=2423',
-    title: 'Design Language & Web Overhaul For Holistic Health',
-    company: 'HHW',
-    year: '2025',
-    href: 'https://www.joeypescatore.com/hhw',
-  },
+  // {
+  //   image: hhwThumbnail,
+  //   title: 'Design Language & Web Overhaul For Holistic Health',
+  //   company: 'HHW',
+  //   year: '2025',
+  //   slug: 'hhw',
+  // },
 ]
 
 type Writing = {
