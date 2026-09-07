@@ -4,6 +4,8 @@ import { LandingPage } from './components/LandingPage'
 import { Game } from './components/Game'
 import { PostPage } from './components/PostPage'
 import { EventualPage } from './components/EventualPage'
+import { WavformPage } from './components/WavformPage'
+import { HHWPage } from './components/HHWPage'
 import { posts } from './data/posts'
 
 function App() {
@@ -21,6 +23,14 @@ function App() {
 
   if (openCaseStudySlug === 'eventual') {
     return <EventualPage onBack={() => setOpenCaseStudySlug(null)} />
+  }
+
+  if (openCaseStudySlug === 'wavform') {
+    return <WavformPage onBack={() => setOpenCaseStudySlug(null)} />
+  }
+
+  if (openCaseStudySlug === 'hhw') {
+    return <HHWPage onBack={() => setOpenCaseStudySlug(null)} />
   }
 
   const openPost = openPostSlug ? posts.find((post) => post.slug === openPostSlug) : null

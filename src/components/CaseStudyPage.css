@@ -49,10 +49,32 @@
   margin-top: 4px;
 }
 
+.case-study-image--square {
+  aspect-ratio: 1 / 1;
+}
+
+.case-study-image--portrait {
+  aspect-ratio: 8 / 9;
+}
+
+.case-study-video-caption {
+  margin: 0;
+  text-align: center;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
 .case-study-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+}
+
+.case-study-stats--2col {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 @media (max-width: 480px) {
@@ -109,8 +131,20 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 24px;
 }
 
-.case-study-feature + .case-study-feature {
+.case-study-section-eyebrow + .case-study-feature {
+  margin-top: 0;
+}
+
+.case-study-video-caption + .case-study-image {
   margin-top: 24px;
+}
+
+.case-study-feature-icon {
+  width: 40px;
+  height: 40px;
+  display: block;
+  object-fit: contain;
 }

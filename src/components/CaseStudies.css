@@ -21,6 +21,7 @@
   justify-content: space-between;
   gap: 16px;
   text-decoration: none;
+  cursor: pointer;
   opacity: 1;
   transition: opacity 200ms ease;
 }
