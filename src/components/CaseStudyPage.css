@@ -1,0 +1,116 @@
+/* Case-study-specific pieces layered on top of PostPage.css's shared shell
+   and type scale (post-page/post-content/post-aside/post-title/post-section-
+   heading/post-paragraph/post-date) — everything here stays at the site's
+   single 14px/20px text size; hierarchy comes from weight and gray only. */
+
+.case-study-section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.case-study-section-eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.case-study-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 24px 0 40px;
+}
+
+@media (max-width: 480px) {
+  .case-study-meta-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.case-study-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.case-study-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  display: block;
+  object-fit: cover;
+  margin-top: 4px;
+}
+
+.case-study-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .case-study-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.case-study-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.case-study-stat-value {
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #111111;
+}
+
+.case-study-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.case-study-list li {
+  position: relative;
+  padding-left: 16px;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #111111;
+}
+
+.case-study-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #111111;
+}
+
+.case-study-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.case-study-feature + .case-study-feature {
+  margin-top: 24px;
+}

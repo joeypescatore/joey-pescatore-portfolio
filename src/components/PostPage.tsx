@@ -1,9 +1,13 @@
+import { useMemo } from 'react'
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconArrowLeft'
+import { useActiveSection } from '../hooks/useActiveSection'
 import type { Post } from '../data/posts'
 import './PostPage.css'
 
 export function PostPage({ post, onBack }: { post: Post; onBack: () => void }) {
-  const chapters = post.sections.filter((section) => section.heading)
+  const chapters = useMemo(() => post.sections.filter((section) => section.heading), [post])
+  const chapterIds = useMemo(() => chapters.map((section) => section.id), [chapters])
+  const activeId = useActiveSection(chapterIds)
 
   return (
     <div className="post-page">
@@ -19,7 +23,12 @@ export function PostPage({ post, onBack }: { post: Post; onBack: () => void }) {
               <ul className="post-chapters-list">
                 {chapters.map((section) => (
                   <li key={section.id}>
-                    <a href={`#${section.id}`}>{section.heading}</a>
+                    <a
+                      href={`#${section.id}`}
+                      className={activeId === section.id ? 'is-active' : undefined}
+                    >
+                      {section.heading}
+                    </a>
                   </li>
                 ))}
               </ul>

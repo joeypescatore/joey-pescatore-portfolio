@@ -14,3 +14,17 @@
   display: flex;
   flex-direction: column;
 }
+
+@media (max-width: 1024px) {
+  .landing-page-column {
+    padding-top: 120px;
+    padding-bottom: 100px;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-page-column {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+}

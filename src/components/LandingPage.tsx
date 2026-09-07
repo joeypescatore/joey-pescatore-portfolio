@@ -9,16 +9,18 @@ import './LandingPage.css'
 export function LandingPage({
   onPlay,
   onOpenPost,
+  onOpenCaseStudy,
 }: {
   onPlay: () => void
   onOpenPost: (slug: string) => void
+  onOpenCaseStudy: (slug: string) => void
 }) {
   return (
     <div className="landing-page">
       <div className="landing-page-column">
         <Hero onPlay={onPlay} />
         <Writings onOpenPost={onOpenPost} />
-        <CaseStudies />
+        <CaseStudies onOpenCaseStudy={onOpenCaseStudy} />
         <SideProjects />
       </div>
       {/* <FloatingNav /> */}
