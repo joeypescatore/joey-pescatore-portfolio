@@ -3,11 +3,14 @@ import { Sprite } from './Sprite'
 import { staggerDelay } from '../utils/stagger'
 import './Hero.css'
 
-export function Hero({ onPlay }: { onPlay: () => void }) {
+// game entry point disabled for now (onPlay unused) — click-to-play on the
+// sprite is being replaced by a chat feature; re-wire `<Sprite onPlay={onPlay} />`
+// to bring it back in the meantime
+export function Hero({ onPlay: _onPlay }: { onPlay: () => void }) {
   return (
     <section className="hero">
       <div className="stagger-in" style={staggerDelay(0)}>
-        <Sprite onPlay={onPlay} />
+        <Sprite />
       </div>
 
       <div className="hero-bio">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconMagnifyingGlass'
 import { IconArrowRight } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconArrowRight'
 import { HomeIcon, ProjectsIcon, WritingsIcon, FunIcon } from './menuIcons'
@@ -33,17 +34,18 @@ const writingItems: MenuItem[] = [
   },
 ]
 
-export function CommandMenu({ onOpenPost }: { onOpenPost: (slug: string) => void }) {
+export function CommandMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
 
   const flatItems = useMemo(() => [...navItems, ...writingItems], [])
 
   function handleSelect(item: MenuItem) {
     const isWritingItem = writingItems.some((writingItem) => writingItem.id === item.id)
     if (isWritingItem) {
-      onOpenPost(item.id)
+      navigate(`/writing/${item.id}`)
       setIsOpen(false)
     }
   }

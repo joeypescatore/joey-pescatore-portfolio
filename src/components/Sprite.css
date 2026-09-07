@@ -14,7 +14,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  cursor: pointer;
+  cursor: default;
 }
 
 .sprite-icon {
@@ -49,6 +49,6 @@
   transition: opacity 100ms ease;
 }
 
-.sprite-track:hover .sprite-tooltip {
+.sprite-walker:hover .sprite-tooltip {
   opacity: 1;
 }

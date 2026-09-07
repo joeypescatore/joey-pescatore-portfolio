@@ -56,7 +56,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
               <h1 className="post-title">Shaping A Complicated Rollout For Widespread Adoption</h1>
             </header>
 
-            <img className="case-study-image" src={heroImage} alt="" />
+            <img className="case-study-image" src={heroImage} alt="Eventual's Premium Lock quote flow shown across desktop and mobile" />
 
             <div className="case-study-meta-grid">
               <div className="case-study-meta-item">
@@ -140,7 +140,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
                 the backend, I built the frontend in code. We reviewed together at the end instead of blocking each
                 other.
               </p>
-              <img className="case-study-image" src={newWorkflowImage} alt="" />
+              <img className="case-study-image" src={newWorkflowImage} alt="Diagram comparing the old sequential design-to-ship workflow with the new parallel one" />
 
               <div className="case-study-feature">
                 <h3 className="post-section-heading">Pixel Perfection Doesn't Require Traditional Handoffs</h3>
@@ -161,7 +161,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
                 Since this screen was already built and in our Figma, it was easy to jump right in the codebase and
                 get to work without needing to create new components.
               </p>
-              <img className="case-study-image" src={designProcessImage} alt="" />
+              <img className="case-study-image" src={designProcessImage} alt="Quote creation screen prototyped directly in code" />
             </section>
 
             <section id="features" className="post-section">
@@ -181,7 +181,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
                   remove it entirely or suggest we shorten it as the modal already provides detailed comparison and
                   the buttons should stay scannable.
                 </p>
-                <img className="case-study-image" src={segmentedControlImage} alt="" />
+                <img className="case-study-image" src={segmentedControlImage} alt="Segmented control letting agents switch between Fixed and Relative payout pricing" />
               </div>
 
               <div className="case-study-feature">
@@ -201,7 +201,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
                     of the comparison.
                   </li>
                 </ul>
-                <img className="case-study-image" src={modalImage} alt="" />
+                <img className="case-study-image" src={modalImage} alt="Modal comparing Fixed and Relative payout threshold options" />
               </div>
 
               <div className="case-study-feature">
@@ -212,13 +212,13 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
                   iteration, I'd change it to '10% above annual premium' so the logic is immediately visible without
                   needing to cross-reference the comparison modal.
                 </p>
-                <img className="case-study-image" src={summaryCardImage} alt="" />
+                <img className="case-study-image" src={summaryCardImage} alt="Quote summary card showing the selected payout threshold" />
               </div>
             </section>
 
             <section id="feedback" className="post-section">
               <div className="case-study-section-eyebrow">Feedback</div>
-              <img className="case-study-image" src={feedbackImage} alt="" />
+              <img className="case-study-image" src={feedbackImage} alt="Team Slack messages sharing early positive feedback on the Relative pricing launch" />
             </section>
           </article>
         </main>

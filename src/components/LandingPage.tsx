@@ -6,21 +6,13 @@ import { SideProjects } from './SideProjects'
 import './sections.css'
 import './LandingPage.css'
 
-export function LandingPage({
-  onPlay,
-  onOpenPost,
-  onOpenCaseStudy,
-}: {
-  onPlay: () => void
-  onOpenPost: (slug: string) => void
-  onOpenCaseStudy: (slug: string) => void
-}) {
+export function LandingPage({ onPlay }: { onPlay: () => void }) {
   return (
     <div className="landing-page">
       <div className="landing-page-column">
         <Hero onPlay={onPlay} />
-        <Writings onOpenPost={onOpenPost} />
-        <CaseStudies onOpenCaseStudy={onOpenCaseStudy} />
+        <Writings />
+        <CaseStudies />
         <SideProjects />
       </div>
       {/* <FloatingNav /> */}
