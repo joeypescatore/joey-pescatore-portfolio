@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { WalkingOvidIcon } from './OvidChat'
 import './Sprite.css'
 
 const SPRITE_WIDTH = 17 // rendered width of .sprite-icon, px
@@ -22,24 +23,32 @@ function getCurrentTranslateX(el: HTMLElement) {
   return parts[4] ?? 0
 }
 
-type Origin = { x: number; y: number }
+// 'visible' (normal wander) -> 'sinking' (dips into the ground in place) ->
+// 'hidden' (fully sunk, paused, while the drawer's open) -> 'rising' (comes
+// back up in place) -> 'visible'. He's a single, continuously-existing
+// element throughout — the animation plays on his own real DOM position,
+// so there's nothing to capture, measure, or predict, and nothing that can
+// end up out of sync with wherever he actually ends up standing.
+export type SpritePhase = 'visible' | 'sinking' | 'hidden' | 'rising'
 
 export function Sprite({
   onOpenChat,
-  hidden = false,
+  sinkPhase = 'visible',
 }: {
-  onOpenChat: (origin: Origin) => void
-  hidden?: boolean
+  onOpenChat: () => void
+  sinkPhase?: SpritePhase
 }) {
   const [x, setX] = useState(0)
   const [facing, setFacing] = useState<1 | -1>(1)
   const [isMoving, setIsMoving] = useState(false)
-  const [footFrame, setFootFrame] = useState(0)
+  const [footFrame, setFootFrame] = useState<0 | 1>(0)
   const [moveDuration, setMoveDuration] = useState(MIN_DURATION)
   const [moveSteps, setMoveSteps] = useState(6)
   const [stepInterval, setStepInterval] = useState(200)
+  const [tooltipWidth, setTooltipWidth] = useState(0)
   const trackRef = useRef<HTMLDivElement>(null)
   const walkerRef = useRef<HTMLButtonElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
   const xRef = useRef(0)
   const rangeRef = useRef(0)
   const moveTimeoutRef = useRef<number | undefined>(undefined)
@@ -61,6 +70,12 @@ export function Sprite({
     const observer = new ResizeObserver(updateRange)
     observer.observe(track)
     return () => observer.disconnect()
+  }, [])
+
+  // measured once — the tooltip's text is static, so its width never
+  // changes after first render
+  useEffect(() => {
+    if (tooltipRef.current) setTooltipWidth(tooltipRef.current.offsetWidth)
   }, [])
 
   useEffect(() => {
@@ -131,23 +146,21 @@ export function Sprite({
   }
 
   // he otherwise keeps wandering in the background the whole time the chat
-  // is open (only visibility:hidden, never unmounted) — without this, he'd
-  // reappear wherever that idle wander happened to land instead of exactly
-  // where the "rising out of the ground" animation just put him
+  // is open (paused, never unmounted) — without this, he'd resume from
+  // wherever that idle wander happened to land instead of exactly where he
+  // sank
   useEffect(() => {
-    if (hidden) pauseWander()
-    else resumeWander()
+    if (sinkPhase === 'visible') resumeWander()
+    else pauseWander()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hidden])
+  }, [sinkPhase])
 
-  // the "sink into the ground" transition needs to know exactly where he was
-  // standing — top-center of his real rendered position, matched by the
-  // ghost App.tsx renders in his place during the transition
-  function handleClick() {
-    if (!walkerRef.current) return
-    const rect = walkerRef.current.getBoundingClientRect()
-    onOpenChat({ x: rect.left + rect.width / 2, y: rect.top })
-  }
+  // left-aligned by default (just looks better than centered) — only
+  // switches to right-aligned once he's far enough right that a
+  // left-aligned tooltip would actually overflow past the track's own
+  // right edge (and bleed past the page's own content padding with it)
+  const trackWidth = rangeRef.current + SPRITE_WIDTH
+  const tooltipSide = x + tooltipWidth > trackWidth ? 'right' : 'left'
 
   return (
     <div className="sprite-track" ref={trackRef}>
@@ -157,47 +170,28 @@ export function Sprite({
         ref={walkerRef}
         onMouseEnter={pauseWander}
         onMouseLeave={resumeWander}
-        onClick={handleClick}
+        onClick={onOpenChat}
         style={{
           transform: `translateX(${x}px)`,
           transitionDuration: `${moveDuration}ms`,
           transitionTimingFunction: `steps(${moveSteps}, jump-end)`,
-          visibility: hidden ? 'hidden' : 'visible',
         }}
       >
-        <svg
-          className="sprite-icon"
-          viewBox="0 0 27 32"
-          shapeRendering="crispEdges"
-          style={{ transform: `scaleX(${facing})` }}
-        >
-          {/* left side of head/body — full-height bar, not just the head block */}
-          <rect x="0" y="0" width="8" height="24" />
-          {/* right head block */}
-          <rect x="12" y="0" width="8" height="8" />
-          <rect x="7" y="4" width="16" height="4" />
-          <rect x="12" y="4" width="4" height="12" />
-          <rect x="20" y="4" width="4" height="12" />
-          {/* brow bridging into body */}
-          <rect x="7" y="12" width="20" height="4" />
-          {/* torso, extended up to close the head-to-body gap (mouth) */}
-          <rect x="4" y="15" width="19" height="13" />
-          {/* legs — static thighs, animated lower legs/feet */}
-          <rect x="8" y="15" width="4" height="13" />
-          <rect x="16" y="20" width="4" height="8" />
-          {footFrame === 0 ? (
-            <>
-              <rect x="8" y="28" width="4" height="4" />
-              <rect x="16" y="28" width="4" height="4" />
-            </>
-          ) : (
-            <>
-              <rect x="10" y="28" width="4" height="4" />
-              <rect x="14" y="28" width="4" height="4" />
-            </>
-          )}
-        </svg>
-        <span className="sprite-tooltip">Click to chat</span>
+        {/* the vertical sink/rise clip lives here, wrapping only the icon —
+            the tooltip sits outside it (as a sibling below) so it isn't
+            clipped away too; it needs to poke up above his head, which the
+            "ground" boundary would otherwise cut off */}
+        <div className="sprite-ground">
+          <div className={`sprite-rise sprite-rise--${sinkPhase}`}>
+            <WalkingOvidIcon size={SPRITE_WIDTH} facing={facing} footFrame={footFrame} />
+          </div>
+        </div>
+        {/* the outer span is the actual hoverable/clickable hit region
+            (body + gap + pill + a small buffer, see Sprite.css) — the pill
+            inside it is purely visual and never moves */}
+        <span ref={tooltipRef} className={`sprite-tooltip sprite-tooltip--${tooltipSide}`}>
+          <span className="sprite-tooltip-pill">Chat with Ovid</span>
+        </span>
       </button>
     </div>
   )

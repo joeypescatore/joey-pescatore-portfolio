@@ -17,7 +17,18 @@ html {
   min-height: 100svh;
 }
 
+body.ovid-chat-open {
+  background: #f9f9f9;
+}
+
 body {
+  /* white by default — every routed page paints its own full-bleed white
+     background over this anyway, but this also has to be right on its own:
+     a rubber-band overscroll bounce on the closed home page reveals the
+     body's own color, not the page's, so it must be white whenever the
+     Ovid drawer is closed. Only while it's open does .ovid-chat-open (see
+     App.tsx) switch this to gray, matching the margin the home page
+     reveals around itself (see .app-panel--shrink in App.css). */
   background: #ffffff;
   color: #111111;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;

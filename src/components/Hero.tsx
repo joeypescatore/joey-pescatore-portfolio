@@ -1,21 +1,19 @@
 import { profile } from '../data/portfolio'
-import { Sprite } from './Sprite'
+import { Sprite, type SpritePhase } from './Sprite'
 import { staggerDelay } from '../utils/stagger'
 import './Hero.css'
 
-type Origin = { x: number; y: number }
-
 export function Hero({
   onOpenChat,
-  hidden = false,
+  spritePhase = 'visible',
 }: {
-  onOpenChat: (origin: Origin) => void
-  hidden?: boolean
+  onOpenChat: () => void
+  spritePhase?: SpritePhase
 }) {
   return (
     <section className="hero">
       <div className="stagger-in" style={staggerDelay(0)}>
-        <Sprite onOpenChat={onOpenChat} hidden={hidden} />
+        <Sprite onOpenChat={onOpenChat} sinkPhase={spritePhase} />
       </div>
 
       <div className="hero-bio">

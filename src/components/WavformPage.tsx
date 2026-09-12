@@ -1,4 +1,4 @@
-import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconArrowLeft'
+import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowLeft'
 import { useActiveSection } from '../hooks/useActiveSection'
 import heroDemo from '../assets/wavform/hero-demo.mp4'
 import solutionSpotify from '../assets/wavform/solution-spotify.mp4'

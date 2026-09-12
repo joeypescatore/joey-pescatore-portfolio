@@ -1,4 +1,5 @@
 import { Hero } from './Hero'
+import type { SpritePhase } from './Sprite'
 import { CaseStudies } from './CaseStudies'
 import { Writings } from './Writings'
 import { SideProjects } from './SideProjects'
@@ -6,19 +7,17 @@ import { SideProjects } from './SideProjects'
 import './sections.css'
 import './LandingPage.css'
 
-type Origin = { x: number; y: number }
-
 export function LandingPage({
   onOpenChat,
-  ovidHidden = false,
+  spritePhase = 'visible',
 }: {
-  onOpenChat: (origin: Origin) => void
-  ovidHidden?: boolean
+  onOpenChat: () => void
+  spritePhase?: SpritePhase
 }) {
   return (
     <div className="landing-page">
       <div className="landing-page-column">
-        <Hero onOpenChat={onOpenChat} hidden={ovidHidden} />
+        <Hero onOpenChat={onOpenChat} spritePhase={spritePhase} />
         <Writings />
         <CaseStudies />
         <SideProjects />

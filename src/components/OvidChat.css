@@ -8,42 +8,36 @@
   width: 420px;
   max-width: 100vw;
   height: 100vh;
-  background-color: #ffffff;
-  border-left: 1px solid #ebebeb;
+  background-color: #f9f9f9;
+  /* reserves room below the floating close button (top: 16px + 32px tall)
+     so it never overlaps the welcome content or the first message */
+  padding-top: 60px;
   transform: translateX(100%);
-  transition: transform 550ms ease;
+  /* same smooth decelerating curve as .app-panel's width/clip-path (they
+     move together) — plain "ease" read as stiff/mechanical for a slide
+     this size */
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ovid-drawer--visible {
   transform: translateX(0);
 }
 
-.ovid-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  padding: 16px 18px;
-  border-bottom: 1px solid #ebebeb;
-}
-
-.ovid-drawer-header-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-}
-
+/* the one persistent way to close the drawer — floats in the same spot in
+   every state (welcome or mid-conversation) instead of living inside a
+   header bar that only sometimes exists */
 .ovid-drawer-close {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
@@ -61,37 +55,97 @@
   align-items: center;
   justify-content: center;
   flex: 1;
+  /* the real section break — greeting vs. suggestions. Everything inside
+     each of those two groups uses its own, much tighter gap below. */
   gap: 24px;
   padding: 24px;
   text-align: center;
   overflow-y: auto;
 }
 
-.ovid-drawer-welcome-icon {
+/* icon down to the title+subtitle pair — echoes the gap Hero.css uses
+   between the sprite and .hero-bio (padding-top: 10px there) */
+.ovid-drawer-welcome-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* matches .hero-bio's padding-top: 10px — the same gap he sits above his
+     own bio text with on the home page */
+  gap: 10px;
+}
+
+/* the "ground" for his rise/sink transitions — its fixed bottom edge never
+   moves, he's the one who moves through it. Height matches .sprite-track
+   (also 32px) so the 10px gap above matches .hero-bio's padding-top for
+   real, instead of only accounting for half of it. */
+.ovid-drawer-walker-ground {
+  display: flex;
+  justify-content: center;
+  height: 32px;
+  overflow: hidden;
+}
+
+/* matches .ovid-drawer-walker-ground's height exactly (not the shorter
+   icon's own ~20px) and centers the icon within itself — this is what
+   .sprite-rise/.sprite-ground got wrong here before: when the thing doing
+   the 100%-of-own-height translateY is shorter than the box clipping it,
+   translating "all the way down" doesn't actually clear that box's own
+   (taller) bottom edge, so part of him stayed visibly poking out even at
+   full "hidden". Matching the two heights means the translate always fully
+   clears the clip, regardless of how the icon is centered inside it. */
+.ovid-drawer-walker-rise {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  height: 100%;
 }
 
-.ovid-drawer-welcome-title {
-  margin: 0;
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 500;
-  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  color: #111111;
+/* mirrors @keyframes sprite-sink in Sprite.css (same shape) — he rises up
+   out of the same ground he just sank into on the home page, like coming
+   out the other end of a pipe. No matching sink on the way out — that beat
+   was cut so closing isn't delayed (see App.tsx handleCloseChat) */
+.ovid-drawer-walker-rise--hidden {
+  transform: translateY(calc(100% + 1px));
 }
 
+.ovid-drawer-walker-rise--risen {
+  transform: translateY(0);
+}
+
+.ovid-drawer-walker-rise--rising {
+  animation: ovid-drawer-walker-transit 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes ovid-drawer-walker-transit {
+  0% {
+    transform: translateY(calc(100% + 1px));
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* bounded to exactly the welcome text's own rendered width and his exact
+   rendered height (both set inline via JS) — this is the track he wanders
+   within, same mechanic as .sprite-track */
+.ovid-drawer-walker-track {
+  position: relative;
+}
+
+.ovid-drawer-walker {
+  position: relative;
+  width: fit-content;
+  transition-property: transform;
+}
+
+/* matches .post-date exactly: 14px/20px/400/rgba(0,0,0,0.4) */
 .ovid-drawer-welcome-subtitle {
   margin: 0;
-  margin-top: -16px;
   font-size: 14px;
-  line-height: 16px;
-  font-weight: 500;
+  line-height: 20px;
+  font-weight: 400;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  color: #8c8c8c;
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .ovid-drawer-suggestions {
@@ -106,20 +160,24 @@
   align-items: center;
   gap: 6px;
   width: fit-content;
-  padding: 7px 12px;
-  border: 1px solid #ebebeb;
-  border-radius: 100px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
   background-color: #ffffff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 16px;
-  color: #696969;
+  font-size: 14px;
+  line-height: 20px;
+  color: #8c8c8c;
   text-align: left;
+  transition: color 150ms ease;
 }
 
+/* no background/shadow hover state — just the text going from the site's
+   usual muted gray to full black, same idea as .post-back-button:hover */
 .ovid-drawer-chip:hover {
-  background-color: #f9f9f9;
+  color: #111111;
 }
 
 .ovid-drawer-chip:disabled {
@@ -136,6 +194,20 @@
   padding: 18px;
   flex: 1;
   overflow-y: auto;
+  /* fades scrolled content at the top/bottom edges of this box specifically
+     — a mask is relative to the element's own painted area, so this can
+     never extend past it and needs no separate overlay element or manual
+     math against padding elsewhere (the close button above this needs none
+     of that either: it sits in .ovid-drawer's own reserved padding-top,
+     which this box structurally starts below and can never scroll into) */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 16px,
+    #000 calc(100% - 16px),
+    transparent 100%
+  );
 }
 
 .ovid-drawer-row {
@@ -154,7 +226,7 @@
   color: #ffffff;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
-  line-height: 19px;
+  line-height: 20px;
   white-space: pre-wrap;
 }
 
@@ -164,21 +236,148 @@
   margin: 0;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
-  line-height: 18px;
+  /* 1px over the site's usual 14px/20px pairing — a link chip is taller
+     than a line of plain text, so wrapped lines carrying one need a hair
+     more room or adjacent lines touch it. Deliberately small enough not
+     to read as a different type rhythm. */
+  line-height: 21px;
   color: #111111;
   white-space: pre-wrap;
 }
 
-.ovid-drawer-typing {
-  color: #8d8d8d;
-  letter-spacing: 2px;
+/* any outbound link in one of Ovid's own replies — inline, sitting mid-
+   sentence. inline-flex + align-items: center for the icon/text pairing
+   inside (reliable), with an explicit, tight line-height rather than
+   inheriting the surrounding paragraph's 21px — that inherited leading was
+   the real bug last round: 13px content in a 21px line-height box left a
+   lot of empty space for the icon (vertical-align: middle) and the text to
+   each land at different, wrong-looking points inside it. Keeping this
+   box's own height tight and explicit gives vertical-align: middle a small,
+   predictable box to center against instead. A stroke instead of a shadow
+   (so two adjacent chips read as clearly separate rather than their
+   shadows overlapping into one blurred shape) and tight padding. */
+.ovid-drawer-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  background-color: #ffffff;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: #111111;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
+.ovid-drawer-link-chip:hover {
+  background-color: #f9f9f9;
+}
+
+.ovid-drawer-link-chip-icon {
+  flex-shrink: 0;
+  /* no-op for the central-icons glyphs (transparent, no fill background),
+     but rounds the corners of the Goodreads logo image specifically, which
+     is a flat square with its own cream background baked in */
+  border-radius: 3px;
+}
+
+/* long URLs truncate in place instead of forcing the whole chip to wrap to
+   a new line — a fixed cap is a simpler, more reliable way to keep chips
+   from stretching wide than trying to measure the exact space left on the
+   current line at render time. Already blockified by being a flex item
+   here, so max-width/text-overflow apply without needing display set. */
+.ovid-drawer-link-chip-label {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
+/* Transitions.dev — Streaming text. Only the reply that just arrived gets
+   its words wrapped and revealed one at a time (see StreamedText in
+   OvidChat.tsx) — restored/historical messages render as plain text,
+   already fully visible. */
+:root {
+  --stream-gap: 60ms;
+  --stream-fade: 350ms;
+  --stream-blur: 1px;
+  --stream-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-stream-w {
+  opacity: 0;
+  filter: blur(var(--stream-blur));
+  transition:
+    opacity var(--stream-fade) var(--stream-ease),
+    filter var(--stream-fade) var(--stream-ease);
+}
+.t-stream-w.is-in {
+  opacity: 1;
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stream-w {
+    transition: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* https://uistack.in/loaders/animated-dot-loader-ui-minimal-css-loading-animation-712a9-34,
+   in the site's own blue (#00a2f1) instead of its original #38bdf8 */
+.ovid-drawer-typing-dot {
+  width: 5px;
+  height: 5px;
+  margin: 1.5px;
+  background: #111111;
+  border-radius: 50%;
+  display: inline-block;
+  animation: ovid-typing-bounce 0.6s infinite alternate;
+}
+
+.ovid-drawer-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.ovid-drawer-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes ovid-typing-bounce {
+  from {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+/* no red anywhere else on the site — reusing the same muted gray as
+   everything else rather than introducing an error color */
 .ovid-drawer-error {
   margin: 0;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 12px;
-  color: #b3261e;
+  color: #8c8c8c;
+}
+
+.ovid-drawer-error-action {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: #00a2f1;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* --- input --- */
@@ -190,7 +389,6 @@
   margin: 0 18px 18px;
   padding: 12px 12px 10px 16px;
   border-radius: 16px;
-  border: 1px solid #ebebeb;
   background-color: #ffffff;
   box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
   gap: 10px;
@@ -202,7 +400,7 @@
   background: transparent;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
-  line-height: 19px;
+  line-height: 20px;
   color: #111111;
 }
 
@@ -223,13 +421,16 @@
   height: 30px;
   border: none;
   border-radius: 100px;
-  background-color: #00a2f1;
+  background-color: #111111;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .ovid-drawer-send:disabled {
-  background-color: #d9d9d9;
+  /* dim via opacity rather than a flat gray — matches how disabled/inactive
+     states are handled everywhere else on the site (.writing-row.is-disabled,
+     .ovid-drawer-chip:disabled above) */
+  opacity: 0.5;
   cursor: default;
 }
 

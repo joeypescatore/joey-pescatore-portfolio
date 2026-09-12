@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@central-icons-react/all": "^1.1.315",
-    "@central-icons-react/round-filled-radius-1-stroke-1.5": "^1.1.315",
-    "@central-icons-react/round-outlined-radius-1-stroke-1.5": "^1.1.310",
+    "@central-icons-react/round-filled-radius-3-stroke-2": "^1.1.319",
+    "@central-icons-react/round-outlined-radius-3-stroke-2": "^1.1.319",
     "@fontsource/geist": "^5.3.0",
     "@fontsource/geist-mono": "^5.3.0",
     "@fontsource/inter": "^5.3.0",

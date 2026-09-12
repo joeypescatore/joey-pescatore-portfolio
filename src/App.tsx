@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate, useParams } fro
 import { bind, play } from 'cuelume'
 import { CommandMenu } from './components/CommandMenu'
 import { LandingPage } from './components/LandingPage'
-import { OvidChat, OvidIcon, type ChatPhase } from './components/OvidChat'
+import { OvidChat, type ChatPhase } from './components/OvidChat'
+import type { SpritePhase } from './components/Sprite'
 import { PostPage } from './components/PostPage'
 import { EventualPage } from './components/EventualPage'
 import { WavformPage } from './components/WavformPage'
@@ -11,7 +12,6 @@ import { NotFound } from './components/NotFound'
 import { posts } from './data/posts'
 import './App.css'
 
-type Origin = { x: number; y: number }
 type AppChatPhase = 'closed' | 'sinking' | ChatPhase | 'rising'
 
 // a quick, self-contained dip at his home position (clipped by the ground,
@@ -19,11 +19,37 @@ type AppChatPhase = 'closed' | 'sinking' | ChatPhase | 'rising'
 // these are sequential beats, not simultaneous. Matches the durations used
 // in App.css/OvidChat.css.
 const SINK_MS = 300
-const REVEAL_MS = 550
-// OvidIcon's rendered height at size=17 (17 * 32/27), matching the Hero
-// sprite — the ghost window's height, so its bottom edge lands exactly at
-// his feet
-const GHOST_SIZE_PX = (17 * 32) / 27
+// the drawer's own slide (and the panel's width/clip-path) takes 450ms —
+// see the CSS transition durations in App.css/OvidChat.css, kept in sync
+// with that value there, not read from here.
+//
+// His rise/sink is scheduled off HANDOFF_MS below, not that 450ms — with
+// an ease-out curve, the drawer is visually all but settled well before
+// its transition's full duration elapses, so waiting the whole thing out
+// before starting his half of the beat reads as a dead gap. HANDOFF_MS is
+// later than "drawer just started moving," earlier than "drawer transition
+// technically finished," and never changes how fast the drawer itself
+// moves — it only changes when he starts reacting to it. Safe to overlap
+// this way since he's a single continuously-existing element animating
+// its own live DOM position (see Sprite.tsx) — unlike a frozen snapshot,
+// there's nothing that can go stale while the surrounding layout is still
+// settling underneath him.
+const HANDOFF_MS = 300
+// how long his rise-in/sink-out inside the drawer itself takes — matches
+// SINK_MS so both ends of the "pipe" move at the same pace
+const RISE_MS = 300
+
+// maps the drawer's own phase machine onto his sink/rise state on the home
+// page. He's a single, continuously-existing element (see Sprite.tsx) that
+// animates in place — no separate "ghost" standing in for him, and nothing
+// to measure or predict, so there's no way for his sink/rise position to
+// end up out of sync with wherever he actually ends up standing.
+function spritePhaseFor(chatPhase: AppChatPhase): SpritePhase {
+  if (chatPhase === 'closed') return 'visible'
+  if (chatPhase === 'sinking') return 'sinking'
+  if (chatPhase === 'rising') return 'rising'
+  return 'hidden'
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -36,10 +62,12 @@ function ScrollToTop() {
 function HomeRoute({
   onOpenChat,
   ovidHidden,
+  spritePhase,
   shrink,
 }: {
-  onOpenChat: (origin: Origin) => void
+  onOpenChat: () => void
   ovidHidden: boolean
+  spritePhase: SpritePhase
   shrink: boolean
 }) {
   return (
@@ -47,8 +75,10 @@ function HomeRoute({
       {/* CommandMenu stays a direct sibling, never wrapped by the shrinking
           panel — it (and the case-study/side-project hover previews further
           down the page) rely on truly viewport-relative position:fixed */}
-      <div className={`app-panel${shrink ? ' app-panel--shrink' : ''}`}>
-        <LandingPage onOpenChat={onOpenChat} ovidHidden={ovidHidden} />
+      <div
+        className={`app-panel${ovidHidden ? ' app-panel--pinned' : ''}${shrink ? ' app-panel--shrink' : ''}`}
+      >
+        <LandingPage onOpenChat={onOpenChat} spritePhase={spritePhase} />
       </div>
       <CommandMenu />
     </>
@@ -75,23 +105,35 @@ function PostRoute() {
 
 function App() {
   // sequence: 'sinking' (he dips into the ground at his real spot, alone) ->
-  // 'opening' (drawer slides out, panel shrinks) -> 'open' -> 'closing'
-  // (drawer slides back) -> 'rising' (he reappears at his real spot) ->
-  // 'closed'. Ovid's click position is kept for the whole run.
+  // 'opening' (drawer slides out, empty) -> 'drawer-rising' (he rises up out
+  // of the ground inside the drawer) -> 'open' -> 'closing' (drawer slides
+  // back immediately, no delay) -> 'rising' (he reappears at his real spot)
+  // -> 'closed'. Closing is intentionally not the mirror of opening — a
+  // sink-in-the-drawer beat before the drawer could even start closing made
+  // the close action feel laggy, so that leg was cut; only the open side
+  // still plays the full "trip through the pipe."
   const [chatPhase, setChatPhase] = useState<AppChatPhase>('closed')
-  const [ovidOrigin, setOvidOrigin] = useState<Origin | null>(null)
 
   useEffect(() => {
     bind()
   }, [])
 
-  function handleOpenChat(origin: Origin) {
+  // body is white by default (see index.css) — only gray while the drawer
+  // is open or transitioning, so a rubber-band overscroll bounce on the
+  // closed home page never reveals gray
+  useEffect(() => {
+    document.body.classList.toggle('ovid-chat-open', chatPhase !== 'closed')
+  }, [chatPhase])
+
+  function handleOpenChat() {
     play('scan')
-    setOvidOrigin(origin)
     setChatPhase('sinking')
     window.setTimeout(() => {
       setChatPhase('opening')
-      window.setTimeout(() => setChatPhase('open'), REVEAL_MS)
+      window.setTimeout(() => {
+        setChatPhase('drawer-rising')
+        window.setTimeout(() => setChatPhase('open'), RISE_MS)
+      }, HANDOFF_MS)
     }, SINK_MS)
   }
 
@@ -99,11 +141,8 @@ function App() {
     setChatPhase('closing')
     window.setTimeout(() => {
       setChatPhase('rising')
-      window.setTimeout(() => {
-        setChatPhase('closed')
-        setOvidOrigin(null)
-      }, SINK_MS)
-    }, REVEAL_MS)
+      window.setTimeout(() => setChatPhase('closed'), SINK_MS)
+    }, HANDOFF_MS)
   }
 
   return (
@@ -116,7 +155,8 @@ function App() {
             <HomeRoute
               onOpenChat={handleOpenChat}
               ovidHidden={chatPhase !== 'closed'}
-              shrink={chatPhase === 'opening' || chatPhase === 'open'}
+              spritePhase={spritePhaseFor(chatPhase)}
+              shrink={chatPhase === 'opening' || chatPhase === 'drawer-rising' || chatPhase === 'open'}
             />
           }
         />
@@ -126,30 +166,10 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {(chatPhase === 'opening' || chatPhase === 'open' || chatPhase === 'closing') && (
-        <OvidChat phase={chatPhase} onClose={handleCloseChat} />
-      )}
-
-      {/* the "slip into the ground" / "rise back out" beat — lives at his
-          real click position (viewport-fixed), plays alone before the drawer
-          reveal starts (and after it finishes closing). The window is a
-          fixed-position peephole the exact size of his sprite with its
-          bottom edge sitting right at his feet ("the ground") — he's the
-          thing that moves (translateY), sliding down past that fixed edge
-          and out of view, like Mario going into a pipe. The earlier version
-          animated clip-path on him directly, which moved the "ground" over
-          a static sprite instead — that read as erasing, not sinking. */}
-      {ovidOrigin && (chatPhase === 'sinking' || chatPhase === 'rising') && (
-        <div
-          key={chatPhase}
-          className="ovid-ghost-window"
-          style={{ left: ovidOrigin.x, top: ovidOrigin.y, width: 17, height: GHOST_SIZE_PX }}
-        >
-          <div className={`ovid-ghost ovid-ghost--${chatPhase}`}>
-            <OvidIcon size={17} />
-          </div>
-        </div>
-      )}
+      {(chatPhase === 'opening' ||
+        chatPhase === 'drawer-rising' ||
+        chatPhase === 'open' ||
+        chatPhase === 'closing') && <OvidChat phase={chatPhase} onClose={handleCloseChat} />}
     </BrowserRouter>
   )
 }
