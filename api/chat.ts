@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { OVID_SYSTEM_PROMPT } from './_ovid-knowledge'
+import { OVID_SYSTEM_PROMPT } from './_ovid-knowledge.js'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // swappable without a redeploy — just update the env var in Vercel's dashboard
