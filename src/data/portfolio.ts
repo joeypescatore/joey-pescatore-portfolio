@@ -80,7 +80,7 @@ type Writing = {
 
 export const writings: Writing[] = [
   {
-    title: 'Designing How Waiting Is Perceived',
+    title: 'The Ten-Year Plateau of Voice',
     date: 'Coming Soon',
     comingSoon: true,
   },
