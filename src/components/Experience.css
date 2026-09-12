@@ -33,7 +33,7 @@
   display: flex;
   align-items: flex-start;
   gap: 2px;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -60,7 +60,7 @@
 }
 
 .experience-title {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -73,7 +73,7 @@
   width: 0;
   overflow: hidden;
   flex-shrink: 0;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: rgba(0, 0, 0, 0.4);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconMagnifyingGlass'
-import { IconArrowRight } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconArrowRight'
+import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconMagnifyingGlass'
+import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowRight'
 import { HomeIcon, ProjectsIcon, WritingsIcon, FunIcon } from './menuIcons'
 import './CommandMenu.css'
 

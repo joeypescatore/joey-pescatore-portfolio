@@ -1,0 +1,62 @@
+.app-panel {
+  width: 100%;
+  /* the shape that's clipped away reveals whatever's behind — gray body
+     (see index.css) while the drawer's open. round(...) here must stay
+     structurally identical to --shrink's below (same value count/order)
+     for the two to interpolate smoothly instead of snapping. */
+  clip-path: inset(0 round 0);
+  /* a smooth decelerating curve (easeOutQuint-ish) rather than plain
+     "ease" — reads as considerably less stiff/mechanical for a panel this
+     size moving this far */
+  transition:
+    width 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    clip-path 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* applied a beat before --shrink (during the sink, via ovidHidden) and
+   removed a beat after --shrink is lifted (not until fully closed) — so
+   `position` itself never flips mid-transition (that's what let width and
+   clip-path below animate smoothly at all — position can't itself be
+   transitioned, but once it's already fixed on both sides of the change,
+   properties like these can be). top/bottom stay at 0 always, in every
+   state — the panel's own layout never insets or moves, so the page's own
+   text never shifts. */
+.app-panel--pinned {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden auto;
+  /* an explicit white fill (rather than relying on .landing-page's own
+     white bg underneath) so a rubber-band overscroll bounce reveals white
+     at the edges instead of the gray page background behind it */
+  background-color: #ffffff;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-panel--pinned::-webkit-scrollbar {
+  display: none;
+}
+
+/* the gray top/bottom margin from the Paper mockup, and the rounded right
+   corners — both done with clip-path rather than a real top/bottom/radius
+   change. clip-path only affects what's painted, never layout, so the
+   page's own scroll position and the text's screen position are completely
+   untouched; this just stops the panel's own white paint 8px short of its
+   top and bottom edges, letting the gray page behind it show through
+   there (and along the right side as the panel narrows for the drawer). */
+.app-panel--shrink {
+  width: calc(100% - 420px);
+  clip-path: inset(8px 0 8px 0 round 0 32px 32px 0);
+}
+
+@media (max-width: 900px) {
+  /* the drawer takes over the full screen at this width (see OvidChat.css),
+     so shrinking the panel underneath it too would just squeeze it to
+     nothing — let the drawer overlay on top instead */
+  .app-panel--shrink {
+    width: 100%;
+    clip-path: inset(0 round 0);
+  }
+}
