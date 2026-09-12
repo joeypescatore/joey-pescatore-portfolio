@@ -20,7 +20,7 @@ html {
 body {
   background: #ffffff;
   color: #111111;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

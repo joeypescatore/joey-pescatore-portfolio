@@ -22,7 +22,15 @@ function getCurrentTranslateX(el: HTMLElement) {
   return parts[4] ?? 0
 }
 
-export function Sprite() {
+type Origin = { x: number; y: number }
+
+export function Sprite({
+  onOpenChat,
+  hidden = false,
+}: {
+  onOpenChat: (origin: Origin) => void
+  hidden?: boolean
+}) {
   const [x, setX] = useState(0)
   const [facing, setFacing] = useState<1 | -1>(1)
   const [isMoving, setIsMoving] = useState(false)
@@ -101,7 +109,7 @@ export function Sprite() {
     return () => window.clearInterval(interval)
   }, [isMoving, stepInterval])
 
-  function handleMouseEnter() {
+  function pauseWander() {
     isPausedRef.current = true
     window.clearTimeout(moveTimeoutRef.current)
     if (isMoving && walkerRef.current) {
@@ -114,12 +122,31 @@ export function Sprite() {
     }
   }
 
-  function handleMouseLeave() {
+  function resumeWander() {
     isPausedRef.current = false
     if (!isMoving) {
       window.clearTimeout(moveTimeoutRef.current)
       moveTimeoutRef.current = window.setTimeout(() => performMoveRef.current(), randomBetween(300, 800))
     }
+  }
+
+  // he otherwise keeps wandering in the background the whole time the chat
+  // is open (only visibility:hidden, never unmounted) — without this, he'd
+  // reappear wherever that idle wander happened to land instead of exactly
+  // where the "rising out of the ground" animation just put him
+  useEffect(() => {
+    if (hidden) pauseWander()
+    else resumeWander()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hidden])
+
+  // the "sink into the ground" transition needs to know exactly where he was
+  // standing — top-center of his real rendered position, matched by the
+  // ghost App.tsx renders in his place during the transition
+  function handleClick() {
+    if (!walkerRef.current) return
+    const rect = walkerRef.current.getBoundingClientRect()
+    onOpenChat({ x: rect.left + rect.width / 2, y: rect.top })
   }
 
   return (
@@ -128,12 +155,14 @@ export function Sprite() {
         type="button"
         className="sprite-walker"
         ref={walkerRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={pauseWander}
+        onMouseLeave={resumeWander}
+        onClick={handleClick}
         style={{
           transform: `translateX(${x}px)`,
           transitionDuration: `${moveDuration}ms`,
           transitionTimingFunction: `steps(${moveSteps}, jump-end)`,
+          visibility: hidden ? 'hidden' : 'visible',
         }}
       >
         <svg
@@ -168,7 +197,7 @@ export function Sprite() {
             </>
           )}
         </svg>
-        <span className="sprite-tooltip">I'm Ovid. I'll be useful soon.</span>
+        <span className="sprite-tooltip">Click to chat</span>
       </button>
     </div>
   )

@@ -6,11 +6,19 @@ import { SideProjects } from './SideProjects'
 import './sections.css'
 import './LandingPage.css'
 
-export function LandingPage({ onPlay }: { onPlay: () => void }) {
+type Origin = { x: number; y: number }
+
+export function LandingPage({
+  onOpenChat,
+  ovidHidden = false,
+}: {
+  onOpenChat: (origin: Origin) => void
+  ovidHidden?: boolean
+}) {
   return (
     <div className="landing-page">
       <div className="landing-page-column">
-        <Hero onPlay={onPlay} />
+        <Hero onOpenChat={onOpenChat} hidden={ovidHidden} />
         <Writings />
         <CaseStudies />
         <SideProjects />

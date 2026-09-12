@@ -5,6 +5,18 @@
   background-color: #ffffff;
   overflow: hidden;
   touch-action: none;
+  /* smooths the intro -> playing handoff: without this, the background
+     snapping from transparent to solid white in a single frame was the main
+     thing making that moment read as an abrupt cut rather than an arrival */
+  transition: background-color 260ms ease;
+}
+
+/* during the launch intro the home page (sliding away underneath) needs to
+   stay visible through the gaps — only the platforms/character/trail
+   themselves are opaque. Becomes a normal solid white overlay again the
+   instant he lands and real gameplay takes over. */
+.game-overlay.is-intro {
+  background-color: transparent;
 }
 
 .game-quit {
@@ -20,7 +32,7 @@
   border-radius: 20px;
   background-color: #f4f4f4;
   cursor: pointer;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #111111;
@@ -82,9 +94,9 @@
 }
 
 .game-lane {
-  position: relative;
+  position: absolute;
+  top: 0;
   height: 100%;
-  margin: 0 auto;
   overflow: hidden;
 }
 
@@ -92,6 +104,18 @@
   position: absolute;
   border-radius: 7px;
   background-color: #0a0a0a;
+  /* runs once on mount (an animation, not a transition, so it actually plays
+     on first paint) — softens the rest of the randomly-seeded platform field
+     suddenly appearing all at once the instant intro hands off to real play.
+     The starting platform, already on screen from intro, keeps its DOM node
+     across that handoff (same key) so this doesn't replay for it. */
+  animation: game-platform-in 220ms ease-out both;
+}
+
+@keyframes game-platform-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .game-platform.is-breakable {
@@ -99,8 +123,29 @@
   border: 1px dashed #0a0a0a;
 }
 
+.game-trail-chip {
+  position: absolute;
+  z-index: 0;
+  border-radius: 1px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: game-trail-dissolve 900ms ease-out forwards;
+}
+
+@keyframes game-trail-dissolve {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--sx), var(--sy)) scale(0.5) rotate(var(--rot));
+  }
+}
+
 .game-character {
   position: absolute;
+  z-index: 1;
   color: #0a0a0a;
 }
 
@@ -126,7 +171,7 @@
 }
 
 .game-over-title {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 20px;
   font-weight: 500;
   color: #111111;
@@ -150,7 +195,7 @@
   border-radius: 8px;
   background-color: #f4f4f4;
   cursor: pointer;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #111111;

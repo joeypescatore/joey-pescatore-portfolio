@@ -47,7 +47,7 @@
   padding: 0;
   border: none;
   background: none;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -70,7 +70,7 @@
 }
 
 .post-chapters-list a {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -101,7 +101,7 @@
 
 .post-title {
   margin: 0;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
@@ -109,7 +109,7 @@
 }
 
 .post-date {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -129,7 +129,7 @@
 
 .post-section-heading {
   margin: 0;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
@@ -138,7 +138,7 @@
 
 .post-paragraph {
   margin: 0;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -160,7 +160,7 @@
 }
 
 .post-footnotes li {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 400;
   line-height: 18px;
