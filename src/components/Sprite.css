@@ -14,7 +14,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  cursor: default;
+  cursor: pointer;
 }
 
 /* extends his clickable/hoverable body by 2px on every side, without
@@ -75,53 +75,105 @@
    swallow that whole gap plus a small buffer — the visible pill inside it
    (.sprite-tooltip-pill) stays flush at the top, so nothing about its
    position or look changes, only how much invisible area around it also
-   counts as "hovering/clicking him." */
+   counts as "hovering/clicking him." Always pinned to his left edge
+   (extending rightward), with a couple extra px of buffer beyond that
+   edge too, same idea as .sprite-walker::before — he's simply never
+   allowed to walk far enough right that this would overflow (see the
+   walk-range clamp in Sprite.tsx). */
 .sprite-tooltip {
   position: absolute;
   bottom: 100%;
+  left: -2px;
   padding-bottom: 10px;
 }
 
-/* pinned to his left edge (extending rightward) with a couple extra px of
-   buffer beyond that edge too, same idea as .sprite-walker::before */
-.sprite-tooltip--left {
-  left: -2px;
-}
-
-/* pinned to his right edge (extending leftward), same buffer */
-.sprite-tooltip--right {
-  right: -2px;
+/* hides the tooltip (and takes it out of the hit-test) while he's sinking,
+   sunk, or rising — see the comment in Sprite.tsx for why this can't just
+   live inside the same clip his body does */
+.sprite-tooltip--concealed {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
 }
 
 /* the actual visible speech-bubble pill — modeled on .ovid-drawer-bubble in
-   OvidChat.css, one bottom corner kept sharper than the rest, same idea as
-   that chat bubble's own tail. Which corner stays sharp depends on which
-   edge it's pinned to above (set from wherever he currently is, see
-   Sprite.tsx, rather than always centered, so this never bleeds past the
-   page's own content edges when he's near either end of his walkable
-   range). */
+   OvidChat.css, its bottom-left corner kept sharper than the rest, same
+   idea as that chat bubble's own tail (pointing down toward him, since
+   he's always pinned to its left edge). */
 .sprite-tooltip-pill {
   display: flex;
   align-items: center;
-  padding: 4px 8px;
   background-color: #171717;
   white-space: nowrap;
-  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 400;
+  overflow: hidden;
   color: #ffffff;
-  opacity: 0;
-  transition: opacity 100ms ease;
-}
-
-.sprite-tooltip--left .sprite-tooltip-pill {
   border-radius: 8px 8px 8px 3px;
-}
-
-.sprite-tooltip--right .sprite-tooltip-pill {
-  border-radius: 8px 8px 3px 8px;
+  /* hidden by default — a plain hover-to-reveal tooltip once the hint
+     below has been dismissed */
+  opacity: 0;
+  /* driven from Sprite.tsx — set to the current text's own real rendered
+     width (see .t-text-swap below, which is what's actually measured), so
+     this only ever animates toward a width that matches real content,
+     never a stale or pre-guessed one */
+  transition:
+    opacity 100ms ease,
+    width var(--text-swap-dur) var(--text-swap-ease);
 }
 
 .sprite-walker:hover .sprite-tooltip-pill {
   opacity: 1;
+}
+
+/* shown even without hovering, until he's actually clicked once this
+   session (see Sprite.tsx's `dismissed`/`hintDismissed`) — a one-time
+   nudge that he's interactive at all */
+.sprite-tooltip-pill--hint {
+  opacity: 1;
+}
+
+/* Transitions.dev — Text states swap. Swaps his tooltip text between "!"
+   and "Chat with Ovid" on hover/leave (see Sprite.tsx's three-phase
+   sequence: .is-exit, then a text change, then .is-enter-start released
+   next frame). */
+:root {
+  --text-swap-dur: 150ms;
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  --text-swap-ease: ease-in-out;
+}
+
+.t-text-swap {
+  display: inline-block;
+  /* lives here (not on .sprite-tooltip-pill) so this element's own
+     offsetWidth — measured directly in Sprite.tsx — already includes
+     exactly what the pill should be wide enough for */
+  padding: 4px 8px;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter var(--text-swap-dur) var(--text-swap-ease),
+    opacity var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap {
+    transition: none !important;
+  }
 }
