@@ -15,6 +15,7 @@ import { IconSpotify } from '@central-icons-react/round-filled-radius-3-stroke-2
 import { IconDiscord } from '@central-icons-react/round-filled-radius-3-stroke-2/IconDiscord'
 import { IconGlobe } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGlobe'
 import goodreadsLogo from '../assets/goodreads-logo.png'
+import { trackVisitorEvent } from '../utils/trackVisitorEvent'
 import './OvidChat.css'
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
@@ -56,10 +57,14 @@ const OVID_ICON_SIZE = 17
 // so the "ground" clipping him during rise/sink lines up with his real feet
 const OVID_ICON_HEIGHT = (OVID_ICON_SIZE * 32) / 27
 
-const SUGGESTIONS: { icon: ComponentType<{ size?: number; color?: string }>; text: string }[] = [
-  { icon: IconUserAdd, text: "I'm a hiring manager, what should I know?" },
-  { icon: IconTelescope, text: 'What side projects has he worked on?' },
-  { icon: IconCd, text: "How's Wavform going?" },
+const SUGGESTIONS: {
+  icon: ComponentType<{ size?: number; color?: string }>
+  text: string
+  event: string
+}[] = [
+  { icon: IconUserAdd, text: "I'm a hiring manager, what should I know?", event: 'ovid_chip_hiring_manager' },
+  { icon: IconTelescope, text: 'What side projects has he worked on?', event: 'ovid_chip_side_projects' },
+  { icon: IconCd, text: "How's Wavform going?", event: 'ovid_chip_wavform' },
 ]
 
 // shared with the Hero sprite — same 27x32 pixel art, just rendered wherever
@@ -399,7 +404,10 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        trackVisitorEvent('closed_ovid_chat_esc')
+        onClose()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -474,7 +482,15 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
       {/* the one consistent, always-visible way to close the drawer — sits
           in the same spot whether or not there's a conversation yet;
           Escape still closes it too */}
-      <button type="button" className="ovid-drawer-close" onClick={onClose} aria-label="Close chat">
+      <button
+        type="button"
+        className="ovid-drawer-close"
+        onClick={() => {
+          trackVisitorEvent('closed_ovid_chat_button')
+          onClose()
+        }}
+        aria-label="Close chat"
+      >
         <IconSidebarSimpleRightWide size={16} color="#8d8d8d" />
       </button>
 
@@ -502,12 +518,15 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
             </p>
           </div>
           <div className="ovid-drawer-suggestions">
-            {SUGGESTIONS.map(({ icon: Icon, text }) => (
+            {SUGGESTIONS.map(({ icon: Icon, text, event }) => (
               <button
                 key={text}
                 type="button"
                 className="ovid-drawer-chip"
-                onClick={() => sendMessage(text)}
+                onClick={() => {
+                  trackVisitorEvent(event)
+                  sendMessage(text)
+                }}
                 disabled={isSending}
               >
                 <Icon size={14} color="#8c8c8c" />

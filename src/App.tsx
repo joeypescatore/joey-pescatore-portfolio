@@ -10,6 +10,7 @@ import { EventualPage } from './components/EventualPage'
 import { WavformPage } from './components/WavformPage'
 import { NotFound } from './components/NotFound'
 import { posts } from './data/posts'
+import { trackVisitorEvent } from './utils/trackVisitorEvent'
 import './App.css'
 
 type AppChatPhase = 'closed' | 'sinking' | ChatPhase | 'rising'
@@ -126,6 +127,7 @@ function App() {
   }, [chatPhase])
 
   function handleOpenChat() {
+    trackVisitorEvent('opened_ovid_chat')
     play('scan')
     setChatPhase('sinking')
     window.setTimeout(() => {
