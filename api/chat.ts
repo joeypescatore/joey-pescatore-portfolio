@@ -299,8 +299,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     console.error('Error while streaming OpenRouter reply', err)
   }
-  res.end()
 
+  // logged before ending the response, not after — Vercel's runtime
+  // appears to start tearing down the function environment as soon as
+  // res.end() is called on a streamed response, which was silently
+  // killing this fetch regardless of its own timeout. The client has
+  // already received every chunk by this point (it was streamed as it
+  // was generated), so finishing the response a moment later here is
+  // invisible to them; it isn't waiting on this the way it was waiting on
+  // the reply itself.
   if (fullReply.length > 0) {
     await logExchange({
       conversationId,
@@ -310,4 +317,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reply: fullReply,
     })
   }
+  res.end()
 }
