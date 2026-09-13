@@ -269,22 +269,27 @@ function LinkChip({ url }: { url: string }) {
 // in-progress streamed one — the text just grows in real time as the
 // network delivers it (see sendMessage), so there's no separate reveal
 // animation layered on top of that.
+//
+// Splits on runs of *any* whitespace (not just a literal space), keeping
+// the actual separator text via a capturing group — splitting on ' '
+// alone glued a URL directly followed by a paragraph break (no space,
+// just "\n\n") together with the next paragraph's first word into one
+// garbled token, which then failed the URL check entirely since its own
+// \S+ can't span the embedded newlines. Odd indices in the result are the
+// separators themselves (a single space, or a run including newlines for
+// a paragraph break) and are rendered back verbatim so the message's own
+// pre-wrap paragraph spacing keeps working.
 function renderReplyContent(text: string) {
-  const words = text.split(' ')
-  return words.map((word, i) => {
-    const parsedUrl = parseUrlWord(word)
+  const parts = text.split(/(\s+)/)
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part
+    const parsedUrl = parseUrlWord(part)
+    if (!parsedUrl) return part
     return (
       <Fragment key={i}>
-        {parsedUrl ? (
-          <>
-            {parsedUrl.leading}
-            <LinkChip url={parsedUrl.url} />
-            {parsedUrl.trailing}
-          </>
-        ) : (
-          word
-        )}
-        {i < words.length - 1 ? ' ' : ''}
+        {parsedUrl.leading}
+        <LinkChip url={parsedUrl.url} />
+        {parsedUrl.trailing}
       </Fragment>
     )
   })
