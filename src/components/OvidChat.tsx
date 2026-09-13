@@ -429,7 +429,13 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    sendMessage(input.trim())
+    const text = input.trim()
+    // only the free-text input path, never a suggestion chip (those fire
+    // their own distinct ovid_chip_* events instead) — lets funnels
+    // separate "asked one of the premade prompts" from "typed their own
+    // question" as two different events, both under "asked Ovid something"
+    if (text) trackVisitorEvent('asked_custom_question')
+    sendMessage(text)
   }
 
   function startNewConversation() {
