@@ -79,6 +79,15 @@ function looksLikeAbuse(text: string): boolean {
   return ABUSE_PATTERNS.some((pattern) => pattern.test(text))
 }
 
+// the system prompt tells the model never to use an em dash, but that's a
+// soft instruction, not a guarantee — gpt-4o-mini still slips one in
+// occasionally, especially in longer replies. This is the actual
+// guarantee, applied to every real model reply before it ever reaches a
+// visitor or the log.
+function sanitizeReply(text: string): string {
+  return text.replace(/\s*—\s*/g, ', ')
+}
+
 // optional: a Google Apps Script Web App URL that appends each exchange as
 // a row in a spreadsheet (see .env.example for setup). Logging is entirely
 // best-effort — if this isn't set, or the request fails or times out, the
@@ -107,15 +116,19 @@ async function logExchange(entry: {
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
 
+// MAX_MESSAGE_LENGTH only makes sense as a cap on user-typed input — an
+// assistant reply can legitimately run up to MAX_OUTPUT_TOKENS (600
+// tokens, ~2,000+ characters), well past 600 characters. Applying the same
+// cap to both roles meant a single longer reply earlier in the
+// conversation would fail this check the moment the client resent it as
+// history on the next turn, 400ing the entire request.
 function isValidMessage(value: unknown): value is ChatMessage {
   if (typeof value !== 'object' || value === null) return false
   const v = value as Record<string, unknown>
-  return (
-    (v.role === 'user' || v.role === 'assistant') &&
-    typeof v.content === 'string' &&
-    v.content.length > 0 &&
-    v.content.length <= MAX_MESSAGE_LENGTH
-  )
+  if (v.role !== 'user' && v.role !== 'assistant') return false
+  if (typeof v.content !== 'string' || v.content.length === 0) return false
+  if (v.role === 'user' && v.content.length > MAX_MESSAGE_LENGTH) return false
+  return true
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -207,11 +220,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const data = await upstream.json()
-  const reply = data?.choices?.[0]?.message?.content
-  if (typeof reply !== 'string' || reply.length === 0) {
+  const rawReply = data?.choices?.[0]?.message?.content
+  if (typeof rawReply !== 'string' || rawReply.length === 0) {
     res.status(502).json({ error: 'No response generated' })
     return
   }
+  const reply = sanitizeReply(rawReply)
 
   await logExchange({
     conversationId,

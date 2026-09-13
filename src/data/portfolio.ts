@@ -7,22 +7,14 @@ import wavformThumbnail from '../assets/wavform/thumbnail.jpg'
 // import hhwThumbnail from '../assets/hhw/thumbnail.jpg'
 
 export const profile = {
-  bioLine1: "I'm a product designer based in New York City.",
-  bioLine2Prefix: 'Currently helping build software at ',
+  bioLine1Prefix: "I'm a product designer based in New York City, most recently helping design and build software at ",
   bioLink: { label: 'Merge', href: 'https://www.merge.dev/' },
   bioParagraph2Prefix: 'Before that, I was the founding product designer at ',
   eventualLink: { label: 'Eventual', href: 'https://eventualclimate.com/' },
-  bioParagraph2Middle:
-    ' and other early stage startups. In a previous life I spent years freelancing in the entertainment industry, doing creative work for labels/artists like ',
-  cactusJackLink: { label: 'Cactus Jack (Travis Scott)', href: 'https://www.reddit.com/r/SoFaygo/s/DcFZSzrqdo' },
-  republicRecordsLink: {
-    label: 'Republic Records',
-    href: 'https://www.youtube.com/playlist?list=PLaiW-gZtXntFkM4tBGw5iMg1PS0YTp2AY',
-  },
-  columbiaRecordsLink: {
-    label: 'Columbia Records',
-    href: 'https://www.youtube.com/playlist?list=PLaiW-gZtXntFkM4tBGw5iMg1PS0YTp2AY',
-  },
+  bioParagraph2Middle: ' and a few other early-stage startups. I also founded ',
+  wavformLink: { label: 'Wavform', href: 'https://apps.apple.com/us/app/wavform/id6670220932' },
+  bioParagraph2End:
+    ", an app that lets you rate, review, and discover music with friends, which made its way into the top 150 on the Apple iOS charts. In a previous life, I did freelance work in the entertainment industry under the 'big three' music labels.",
   contactPrefix: 'You can reach me on ',
   twitterLink: { label: 'Twitter/X', href: 'https://x.com/joeypescatore_' },
   linkedinLink: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },
