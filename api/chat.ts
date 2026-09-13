@@ -86,13 +86,17 @@ function looksLikeAbuse(text: string): boolean {
 
 // the system prompt tells the model never to use an em dash or markdown
 // emphasis/heading syntax, but those are soft instructions, not
-// guarantees — gpt-4o-mini still reaches for **bold**/*italic*/# headers
+// guarantees — the model still reaches for **bold**/*italic*/# headers
 // fairly often, especially for "give me a rundown/list" style prompts.
 // This is the actual guarantee, applied to every real model reply before
 // it ever reaches a visitor or the log: the frontend renders plain text
 // only, so any markdown character that got through would otherwise show
 // up as a literal asterisk or hash mark. A plain hyphen/number for a list
 // item is left alone — that's not markdown syntax, it's just a character.
+// Applied per streamed chunk below rather than once on the full text, so
+// a marker pair split across two chunks (rare) can slip through uncaught
+// — an acceptable tradeoff for a cosmetic guarantee, not worth buffering
+// across chunk boundaries to close entirely.
 function sanitizeReply(text: string): string {
   return text
     .replace(/\s*—\s*/g, ', ')
@@ -102,6 +106,35 @@ function sanitizeReply(text: string): string {
     .replace(/__(.+?)__/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
+}
+
+// OpenRouter streams the same SSE shape OpenAI's chat completions API
+// does: newline-delimited "data: {...}" frames, a blank line between each,
+// occasional ": " comment/keepalive lines, terminated by "data: [DONE]".
+// Calls onDelta with each individual content fragment as it arrives.
+async function streamOpenRouterReply(body: ReadableStream<Uint8Array>, onDelta: (text: string) => void): Promise<void> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) return
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? '' // last entry may be an incomplete line — held for the next chunk
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('data:')) continue
+      const payload = trimmed.slice(5).trim()
+      if (payload === '[DONE]') return
+      try {
+        const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content
+        if (typeof delta === 'string' && delta.length > 0) onDelta(delta)
+      } catch {
+        // malformed/partial frame — nothing usable in it, skip
+      }
+    }
+  }
 }
 
 // optional: a Google Apps Script Web App URL that appends each exchange as
@@ -219,6 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
+        stream: true,
         messages: [{ role: 'system', content: OVID_SYSTEM_PROMPT }, ...messages],
       }),
     })
@@ -235,20 +269,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const data = await upstream.json()
-  const rawReply = data?.choices?.[0]?.message?.content
-  if (typeof rawReply !== 'string' || rawReply.length === 0) {
+  if (!upstream.body) {
     res.status(502).json({ error: 'No response generated' })
     return
   }
-  const reply = sanitizeReply(rawReply)
 
-  await logExchange({
-    conversationId,
-    turn,
-    type: 'normal',
-    userMessage: latestUserMessage?.content ?? '',
-    reply,
-  })
-  res.status(200).json({ reply })
+  // streamed as plain text, not JSON — the frontend appends each chunk
+  // straight into the growing reply as it arrives, so the first words show
+  // up as soon as the model generates them instead of waiting for the
+  // whole reply. The abuse/limit-reached/error paths above stay as plain
+  // JSON responses; only a real model generation streams.
+  res.status(200)
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+
+  let fullReply = ''
+  try {
+    await streamOpenRouterReply(upstream.body, (delta) => {
+      const sanitized = sanitizeReply(delta)
+      fullReply += sanitized
+      res.write(sanitized)
+    })
+  } catch (err) {
+    console.error('Error while streaming OpenRouter reply', err)
+  }
+  res.end()
+
+  if (fullReply.length > 0) {
+    await logExchange({
+      conversationId,
+      turn,
+      type: 'normal',
+      userMessage: latestUserMessage?.content ?? '',
+      reply: fullReply,
+    })
+  }
 }

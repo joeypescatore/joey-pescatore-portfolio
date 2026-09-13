@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type FormEvent } from 'react'
+import { Fragment, useEffect, useRef, useState, type ComponentType, type FormEvent } from 'react'
 import { IconArrowUp } from '@central-icons-react/round-filled-radius-3-stroke-2/IconArrowUp'
 import { IconSidebarSimpleRightWide } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSidebarSimpleRightWide'
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
@@ -202,12 +202,6 @@ function DrawerWalker({ trackWidth }: { trackWidth: number }) {
   )
 }
 
-// ms between each visually-wrapped line revealing — matches --stream-gap
-// in OvidChat.css. Line by line reads much faster than word by word for
-// the same total text, since a typical reply is only a handful of lines
-// but dozens of words.
-const STREAM_LINE_GAP_MS = 70
-
 const URL_WORD_PATTERN = /^(https?:\/\/|www\.)\S+$/i
 const TRAILING_PUNCTUATION_PATTERN = /[.,!?;:)\]}]+$/
 
@@ -263,78 +257,23 @@ function LinkChip({ url }: { url: string }) {
   )
 }
 
-// wraps each word in a .t-stream-w span and reveals a full visually-
-// wrapped line at a time (not one word at a time), mimicking a live
-// stream even though the reply arrives all at once. Which line each word
-// actually landed on isn't known until after layout, so a measurement
-// pass (same technique as the walker-track width elsewhere in this file)
-// groups word spans by their rendered top offset once mounted, and again
-// on resize. animate=false (restored/historical messages) renders
-// everything already revealed, no animation, no measurement needed. Any
-// word that's a full URL renders as a LinkChip instead of plain text.
-function StreamedText({ text, animate }: { text: string; animate: boolean }) {
+// splits a reply into words, rendering any full-URL word as a LinkChip
+// instead of plain text. Used for both a finalized message and the
+// in-progress streamed one — the text just grows in real time as the
+// network delivers it (see sendMessage), so there's no separate reveal
+// animation layered on top of that.
+function renderReplyContent(text: string) {
   const words = text.split(' ')
-  const containerRef = useRef<HTMLParagraphElement>(null)
-  const [lineOfWord, setLineOfWord] = useState<number[]>([])
-  const [revealedLines, setRevealedLines] = useState(0)
-
-  useLayoutEffect(() => {
-    if (!animate) return
-    const el = containerRef.current
-    if (!el) return
-    function measure() {
-      const wordEls = el!.querySelectorAll<HTMLElement>('.t-stream-w')
-      let lastTop = Number.NaN
-      let line = -1
-      const groups: number[] = []
-      wordEls.forEach((wordEl) => {
-        const top = wordEl.getBoundingClientRect().top
-        if (Number.isNaN(lastTop) || Math.abs(top - lastTop) > 2) {
-          line++
-          lastTop = top
-        }
-        groups.push(line)
-      })
-      setLineOfWord(groups)
-    }
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [text, animate])
-
-  const totalLines = lineOfWord.length ? lineOfWord[lineOfWord.length - 1] + 1 : 0
-
-  useEffect(() => {
-    if (!animate || totalLines === 0) return
-    setRevealedLines(0)
-    let i = 0
-    const interval = window.setInterval(() => {
-      i++
-      setRevealedLines(i)
-      if (i >= totalLines) window.clearInterval(interval)
-    }, STREAM_LINE_GAP_MS)
-    return () => window.clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, animate, totalLines])
-
-  return (
-    <p className="ovid-drawer-reply" ref={containerRef}>
-      {words.map((word, i) => {
-        const parsedUrl = parseUrlWord(word)
-        const isRevealed = !animate || (lineOfWord[i] ?? 0) < revealedLines
-        return (
-          <Fragment key={i}>
-            <span className={`t-stream-w${isRevealed ? ' is-in' : ''}`}>
-              {parsedUrl ? <LinkChip url={parsedUrl.url} /> : word}
-            </span>
-            {parsedUrl?.trailing}
-            {i < words.length - 1 ? ' ' : ''}
-          </Fragment>
-        )
-      })}
-    </p>
-  )
+  return words.map((word, i) => {
+    const parsedUrl = parseUrlWord(word)
+    return (
+      <Fragment key={i}>
+        {parsedUrl ? <LinkChip url={parsedUrl.url} /> : word}
+        {parsedUrl?.trailing}
+        {i < words.length - 1 ? ' ' : ''}
+      </Fragment>
+    )
+  })
 }
 
 export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => void }) {
@@ -346,10 +285,11 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
   // only one who can know this, since checking it means reconstructing the
   // same cost estimate it does
   const [limitReached, setLimitReached] = useState<boolean>(rememberedLimitReached)
-  // index of the one reply that should stream in word by word — only ever
-  // the reply that just arrived this session, never a restored/historical
-  // one
-  const [streamingIndex, setStreamingIndex] = useState<number | null>(null)
+  // the in-progress reply's text as it streams in from the network — null
+  // when there's no active stream (shows the typing dots instead, see the
+  // render below), an empty/growing string once real content starts
+  // arriving. Only ever set while sendMessage's own fetch is in flight.
+  const [pendingReply, setPendingReply] = useState<string | null>(null)
   // the drawer mounts fresh every time it opens, already in the "open" phase —
   // rendering translateX(0) from the very first paint would skip the slide-in
   // transition entirely (a CSS transition only animates a property change
@@ -402,7 +342,7 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages, isSending])
+  }, [messages, isSending, pendingReply])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -422,21 +362,49 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
     setInput('')
     setError(null)
     setIsSending(true)
+    setPendingReply(null)
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: next, conversationId: rememberedConversationId }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Something went wrong')
-      setStreamingIndex(next.length)
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
-      if (data.limitReached) setLimitReached(true)
+
+      // the abuse/limit-reached/error paths (see api/chat.ts) stay plain
+      // JSON; only a real model generation comes back as a streamed
+      // text/plain body, so the content type is what tells these apart
+      const isJson = (res.headers.get('content-type') ?? '').includes('application/json')
+      if (isJson) {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Something went wrong')
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
+        if (data.limitReached) setLimitReached(true)
+        return
+      }
+
+      if (!res.ok || !res.body) throw new Error('Something went wrong')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let full = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        if (chunk.length === 0) continue
+        full += chunk
+        // the typing dots (rendered while pendingReply is null) stay up
+        // until the very first real chunk arrives, rather than swapping to
+        // an empty bubble the instant the connection opens
+        setPendingReply(full)
+      }
+      if (full.length === 0) throw new Error('No response generated')
+      setMessages((prev) => [...prev, { role: 'assistant', content: full }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsSending(false)
+      setPendingReply(null)
     }
   }
 
@@ -449,7 +417,6 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
     setMessages([])
     setError(null)
     setLimitReached(false)
-    setStreamingIndex(null)
     rememberedConversationId = crypto.randomUUID()
   }
 
@@ -545,10 +512,13 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
                 <div className="ovid-drawer-bubble">{m.content}</div>
               </div>
             ) : (
-              <StreamedText key={i} text={m.content} animate={i === streamingIndex} />
+              <p key={i} className="ovid-drawer-reply">
+                {renderReplyContent(m.content)}
+              </p>
             ),
           )}
-          {isSending && (
+          {pendingReply !== null && <p className="ovid-drawer-reply">{renderReplyContent(pendingReply)}</p>}
+          {isSending && pendingReply === null && (
             <div className="ovid-drawer-typing" aria-label="Ovid is typing">
               <span className="ovid-drawer-typing-dot" />
               <span className="ovid-drawer-typing-dot" />
