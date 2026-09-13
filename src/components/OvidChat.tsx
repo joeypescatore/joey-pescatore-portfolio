@@ -4,17 +4,7 @@ import { IconSidebarSimpleRightWide } from '@central-icons-react/round-filled-ra
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
 import { IconTelescope } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTelescope'
 import { IconCd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCd'
-import { IconX } from '@central-icons-react/round-filled-radius-3-stroke-2/IconX'
-import { IconLinkedin } from '@central-icons-react/round-filled-radius-3-stroke-2/IconLinkedin'
-import { IconYoutube } from '@central-icons-react/round-filled-radius-3-stroke-2/IconYoutube'
-import { IconInstagram } from '@central-icons-react/round-filled-radius-3-stroke-2/IconInstagram'
-import { IconGithub } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGithub'
-import { IconTiktok } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTiktok'
-import { IconFacebook } from '@central-icons-react/round-filled-radius-3-stroke-2/IconFacebook'
-import { IconSpotify } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSpotify'
-import { IconDiscord } from '@central-icons-react/round-filled-radius-3-stroke-2/IconDiscord'
-import { IconGlobe } from '@central-icons-react/round-filled-radius-3-stroke-2/IconGlobe'
-import goodreadsLogo from '../assets/goodreads-logo.png'
+import linkedinLogo from '../assets/linkedin-logo.png'
 import { trackVisitorEvent } from '../utils/trackVisitorEvent'
 import './OvidChat.css'
 
@@ -229,49 +219,29 @@ function parseUrlWord(word: string): { url: string; trailing: string } | null {
   return { url, trailing }
 }
 
-type BrandIconEntry =
-  | { type: 'component'; icon: ComponentType<{ size?: number; color?: string; className?: string }>; color: string }
-  | { type: 'image'; src: string }
-
-// central-icons' own brand glyphs, each in that brand's own color, instead
-// of a third-party favicon service (low-res, inconsistent quality across
-// domains). A couple of brands (Goodreads) don't have a central-icons
-// glyph, so those use an actual logo image instead. IconGlobe is the
-// fallback for anything not in this list at all.
-const BRAND_ICONS: Record<string, BrandIconEntry> = {
-  'twitter.com': { type: 'component', icon: IconX, color: '#000000' },
-  'x.com': { type: 'component', icon: IconX, color: '#000000' },
-  'linkedin.com': { type: 'component', icon: IconLinkedin, color: '#0a66c2' },
-  'youtube.com': { type: 'component', icon: IconYoutube, color: '#ff0000' },
-  'youtu.be': { type: 'component', icon: IconYoutube, color: '#ff0000' },
-  'instagram.com': { type: 'component', icon: IconInstagram, color: '#e4405f' },
-  'github.com': { type: 'component', icon: IconGithub, color: '#181717' },
-  'tiktok.com': { type: 'component', icon: IconTiktok, color: '#000000' },
-  'facebook.com': { type: 'component', icon: IconFacebook, color: '#1877f2' },
-  'spotify.com': { type: 'component', icon: IconSpotify, color: '#1db954' },
-  'discord.com': { type: 'component', icon: IconDiscord, color: '#5865f2' },
-  'discord.gg': { type: 'component', icon: IconDiscord, color: '#5865f2' },
-  'goodreads.com': { type: 'image', src: goodreadsLogo },
+// a couple of domains get a bundled local asset instead of the generic
+// favicon service below, when that service's result for them isn't as
+// crisp/on-brand as pinning the real logo ourselves
+const FAVICON_OVERRIDES: Record<string, string> = {
+  'linkedin.com': linkedinLogo,
 }
 
-const FALLBACK_BRAND_ICON: BrandIconEntry = { type: 'component', icon: IconGlobe, color: '#8c8c8c' }
-
-// an exact-match lookup missed open.spotify.com entirely (only "spotify.com"
-// was registered), silently falling back to the generic globe icon — this
-// matches any subdomain of a registered root domain too, not just an exact
-// hostname, so that class of bug can't happen again for other brands either
-function getBrandIcon(hostname: string): BrandIconEntry {
+// Google's favicon service, at a high enough requested size that it
+// returns each site's actual best-quality declared icon (e.g. its
+// apple-touch-icon) rather than a low-res 16x16 — works for literally any
+// domain, so there's no hardcoded per-brand registry to maintain beyond
+// the small override list above
+function getFaviconUrl(hostname: string): string {
   const host = hostname.replace(/^www\./i, '')
-  for (const domain in BRAND_ICONS) {
-    if (host === domain || host.endsWith(`.${domain}`)) return BRAND_ICONS[domain]
+  for (const domain in FAVICON_OVERRIDES) {
+    if (host === domain || host.endsWith(`.${domain}`)) return FAVICON_OVERRIDES[domain]
   }
-  return FALLBACK_BRAND_ICON
+  return `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(hostname)}`
 }
 
 // any outbound link in one of Ovid's own replies (never user messages)
-// renders as this inline chip instead of raw text — that brand's own logo
-// (a central-icons glyph in its own color, or an actual image for brands
-// central-icons doesn't have) plus the cleaned-up URL
+// renders as this inline chip instead of raw text — that site's own real
+// favicon plus the cleaned-up URL
 function LinkChip({ url }: { url: string }) {
   const href = url.startsWith('www.') ? `https://${url}` : url
   let hostname = ''
@@ -281,15 +251,10 @@ function LinkChip({ url }: { url: string }) {
     hostname = ''
   }
   const label = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '')
-  const brandIcon = getBrandIcon(hostname)
 
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="ovid-drawer-link-chip">
-      {brandIcon.type === 'image' ? (
-        <img className="ovid-drawer-link-chip-icon" src={brandIcon.src} alt="" width={13} height={13} />
-      ) : (
-        <brandIcon.icon className="ovid-drawer-link-chip-icon" size={13} color={brandIcon.color} />
-      )}
+      <img className="ovid-drawer-link-chip-icon" src={getFaviconUrl(hostname)} alt="" width={16} height={16} />
       <span className="ovid-drawer-link-chip-label">{label}</span>
     </a>
   )

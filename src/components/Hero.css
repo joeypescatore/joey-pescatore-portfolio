@@ -63,6 +63,11 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 100ms ease;
+  /* .hero-bio sets line-height: 20px, which this inherits by default and
+     Sprite.tsx's tooltip never has to contend with — reset back to the
+     browser's normal font-metric-based line-height so the pill's own
+     text-swap padding renders with the same top/bottom padding as his */
+  line-height: normal;
 }
 
 .hero-email-copy:hover .hero-email-tooltip {

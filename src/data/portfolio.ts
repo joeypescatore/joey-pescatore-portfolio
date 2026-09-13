@@ -14,7 +14,7 @@ export const profile = {
   bioParagraph2Middle: ' and a few other early-stage startups. I also founded ',
   wavformLink: { label: 'Wavform', href: 'https://apps.apple.com/us/app/wavform/id6670220932' },
   bioParagraph2End:
-    ", an app that lets you rate, review, and discover music with friends, which made its way into the top 150 on the Apple iOS charts. In a previous life, I did freelance work in the entertainment industry under the 'big three' music labels.",
+    ', an app that lets you rate, review, and discover music with friends, which made its way into the top 150 on the Apple iOS charts. In a previous life, I freelanced in the entertainment industry working with major music labels.',
   contactPrefix: 'You can reach me on ',
   twitterLink: { label: 'Twitter/X', href: 'https://x.com/joeypescatore_' },
   linkedinLink: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },

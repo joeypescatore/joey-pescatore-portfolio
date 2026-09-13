@@ -246,43 +246,55 @@
 }
 
 /* any outbound link in one of Ovid's own replies — inline, sitting mid-
-   sentence. inline-flex + align-items: center for the icon/text pairing
-   inside (reliable), with an explicit, tight line-height rather than
-   inheriting the surrounding paragraph's 21px — that inherited leading was
-   the real bug last round: 13px content in a 21px line-height box left a
-   lot of empty space for the icon (vertical-align: middle) and the text to
-   each land at different, wrong-looking points inside it. Keeping this
-   box's own height tight and explicit gives vertical-align: middle a small,
-   predictable box to center against instead. A stroke instead of a shadow
-   (so two adjacent chips read as clearly separate rather than their
-   shadows overlapping into one blurred shape) and tight padding. */
+   sentence. Modeled on Google's AI Overview citation chips: a fully
+   rounded, filled pill (no border/stroke) with a muted gray label,
+   reading as a quiet citation rather than a prominent link. inline-flex +
+   align-items: center for the icon/text pairing inside (reliable). The
+   padding + line-height below add up to exactly 21px, matching
+   .ovid-drawer-reply's own line-height — when an inline element is
+   TALLER than the line it sits in, the browser grows that line to fit
+   it, and vertical-align: middle then centers the chip in that enlarged
+   line while the surrounding baseline-anchored text doesn't move nearly
+   as much, so the chip reads as sitting lower than the text next to it.
+   Matching the two heights means the line never has to grow, so middle
+   alignment lines up correctly. */
 .ovid-drawer-link-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 6px;
-  border: 1px solid #ebebeb;
-  border-radius: 6px;
-  background-color: #ffffff;
+  /* left padding just clears the pill's own rounded corner — the icon
+     itself is meant to hug flush against that edge, same as Google's */
+  padding: 2px 6px 2px 2px;
+  border: none;
+  border-radius: 999px;
+  background-color: #f0f0f0;
   font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   font-size: 13px;
-  line-height: 18px;
-  color: #111111;
+  font-weight: 500;
+  line-height: 17px;
+  color: #5f5f5f;
   text-decoration: none;
   white-space: nowrap;
   vertical-align: middle;
+  /* vertical-align: middle still lands a couple px low for an
+     inline-flex element in this spot (its "middle" isn't computed quite
+     the same as for a plain inline-block) — a small paint-only nudge up,
+     doesn't affect layout/line height */
+  transform: translateY(-2px);
 }
 
 .ovid-drawer-link-chip:hover {
-  background-color: #f9f9f9;
+  background-color: #e6e6e6;
 }
 
 .ovid-drawer-link-chip-icon {
   flex-shrink: 0;
-  /* no-op for the central-icons glyphs (transparent, no fill background),
-     but rounds the corners of the Goodreads logo image specifically, which
-     is a flat square with its own cream background baked in */
-  border-radius: 3px;
+  border-radius: 50%;
+  /* most real favicons have a transparent background — a white backing
+     keeps every one of them reading as a clean circle instead of showing
+     the pill's own gray through any transparent corners */
+  background-color: #ffffff;
+  object-fit: cover;
 }
 
 /* long URLs truncate in place instead of forcing the whole chip to wrap to
