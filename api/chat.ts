@@ -2,23 +2,28 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { OVID_SYSTEM_PROMPT } from './_ovid-knowledge.js'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-// swappable without a redeploy — just update the env var in Vercel's dashboard
-const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'
+// swappable without a redeploy — just update the env var in Vercel's dashboard.
+// Switched from openai/gpt-4o-mini: per Artificial Analysis benchmarks,
+// gemini-2.5-flash-lite has ~1.9x the output throughput (282.6 vs 150.2
+// tok/s) and ~3.4x faster time-to-first-token (0.30s vs 1.01s), and is
+// also cheaper (see pricing below) — a straightforward win for a
+// knowledge-base chatbot that doesn't need heavy reasoning.
+const MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash-lite'
 // a generous sanity ceiling on payload size/latency — not the thing that
 // actually decides when a conversation is "done" anymore, see
 // MAX_CONVERSATION_SPEND_USD below for that
 const MAX_HISTORY_MESSAGES = 60
 const MAX_MESSAGE_LENGTH = 600
 // 300 was cutting off longer answers (e.g. the full Ms. Crawford story)
-// before they finished — gpt-4o-mini's output is cheap enough (see pricing
+// before they finished — MODEL's output is cheap enough (see pricing
 // below) that doubling this barely moves the spend estimate
 const MAX_OUTPUT_TOKENS = 600
 
 // $/1M tokens — update these if MODEL changes (current values are
-// openai/gpt-4o-mini's public pricing). This only gates a soft
-// conversational budget, not billing, so it doesn't need to be exact.
-const INPUT_COST_PER_1M_TOKENS = 0.15
-const OUTPUT_COST_PER_1M_TOKENS = 0.6
+// google/gemini-2.5-flash-lite's OpenRouter pricing). This only gates a
+// soft conversational budget, not billing, so it doesn't need to be exact.
+const INPUT_COST_PER_1M_TOKENS = 0.1
+const OUTPUT_COST_PER_1M_TOKENS = 0.4
 // stop the conversation once its estimated cost crosses this, rather than
 // capping by message count (never bring that back — a long conversation of
 // short messages is fine; a few very long ones can still cost more than
@@ -26,9 +31,9 @@ const OUTPUT_COST_PER_1M_TOKENS = 0.6
 // base has grown a fair bit and gets resent in full every single turn, so
 // each turn now costs more than it used to at the same message count —
 // bumped from $0.05 to keep the actual number of messages a visitor gets
-// from feeling smaller than before. Still trivial in aggregate: gpt-4o-mini
-// is cheap enough that even every visitor maxing this out daily wouldn't
-// add up to much.
+// from feeling smaller than before. Still trivial in aggregate: MODEL is
+// cheap enough that even every visitor maxing this out daily wouldn't add
+// up to much.
 const MAX_CONVERSATION_SPEND_USD = 0.1
 
 // crude but consistent estimate (~4 chars/token for English) — no tokenizer
@@ -79,13 +84,24 @@ function looksLikeAbuse(text: string): boolean {
   return ABUSE_PATTERNS.some((pattern) => pattern.test(text))
 }
 
-// the system prompt tells the model never to use an em dash, but that's a
-// soft instruction, not a guarantee — gpt-4o-mini still slips one in
-// occasionally, especially in longer replies. This is the actual
-// guarantee, applied to every real model reply before it ever reaches a
-// visitor or the log.
+// the system prompt tells the model never to use an em dash or markdown
+// emphasis/heading syntax, but those are soft instructions, not
+// guarantees — gpt-4o-mini still reaches for **bold**/*italic*/# headers
+// fairly often, especially for "give me a rundown/list" style prompts.
+// This is the actual guarantee, applied to every real model reply before
+// it ever reaches a visitor or the log: the frontend renders plain text
+// only, so any markdown character that got through would otherwise show
+// up as a literal asterisk or hash mark. A plain hyphen/number for a list
+// item is left alone — that's not markdown syntax, it's just a character.
 function sanitizeReply(text: string): string {
-  return text.replace(/\s*—\s*/g, ', ')
+  return text
+    .replace(/\s*—\s*/g, ', ')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '$2')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
 }
 
 // optional: a Google Apps Script Web App URL that appends each exchange as

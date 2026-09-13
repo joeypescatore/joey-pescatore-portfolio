@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ComponentType, type FormEvent } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type FormEvent } from 'react'
 import { IconArrowUp } from '@central-icons-react/round-filled-radius-3-stroke-2/IconArrowUp'
 import { IconSidebarSimpleRightWide } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSidebarSimpleRightWide'
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
@@ -202,8 +202,11 @@ function DrawerWalker({ trackWidth }: { trackWidth: number }) {
   )
 }
 
-// ms between each word revealing — matches --stream-gap in OvidChat.css
-const STREAM_GAP_MS = 60
+// ms between each visually-wrapped line revealing — matches --stream-gap
+// in OvidChat.css. Line by line reads much faster than word by word for
+// the same total text, since a typical reply is only a handful of lines
+// but dozens of words.
+const STREAM_LINE_GAP_MS = 70
 
 const URL_WORD_PATTERN = /^(https?:\/\/|www\.)\S+$/i
 const TRAILING_PUNCTUATION_PATTERN = /[.,!?;:)\]}]+$/
@@ -260,35 +263,69 @@ function LinkChip({ url }: { url: string }) {
   )
 }
 
-// wraps each word in a .t-stream-w span and reveals them one at a time,
-// mimicking a live stream even though the reply arrives all at once.
-// animate=false (restored/historical messages) renders every word already
-// revealed, no animation. Any word that's a full URL renders as a LinkChip
-// instead of plain text.
+// wraps each word in a .t-stream-w span and reveals a full visually-
+// wrapped line at a time (not one word at a time), mimicking a live
+// stream even though the reply arrives all at once. Which line each word
+// actually landed on isn't known until after layout, so a measurement
+// pass (same technique as the walker-track width elsewhere in this file)
+// groups word spans by their rendered top offset once mounted, and again
+// on resize. animate=false (restored/historical messages) renders
+// everything already revealed, no animation, no measurement needed. Any
+// word that's a full URL renders as a LinkChip instead of plain text.
 function StreamedText({ text, animate }: { text: string; animate: boolean }) {
   const words = text.split(' ')
-  const [revealed, setRevealed] = useState(animate ? 0 : words.length)
+  const containerRef = useRef<HTMLParagraphElement>(null)
+  const [lineOfWord, setLineOfWord] = useState<number[]>([])
+  const [revealedLines, setRevealedLines] = useState(0)
+
+  useLayoutEffect(() => {
+    if (!animate) return
+    const el = containerRef.current
+    if (!el) return
+    function measure() {
+      const wordEls = el!.querySelectorAll<HTMLElement>('.t-stream-w')
+      let lastTop = Number.NaN
+      let line = -1
+      const groups: number[] = []
+      wordEls.forEach((wordEl) => {
+        const top = wordEl.getBoundingClientRect().top
+        if (Number.isNaN(lastTop) || Math.abs(top - lastTop) > 2) {
+          line++
+          lastTop = top
+        }
+        groups.push(line)
+      })
+      setLineOfWord(groups)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [text, animate])
+
+  const totalLines = lineOfWord.length ? lineOfWord[lineOfWord.length - 1] + 1 : 0
 
   useEffect(() => {
-    if (!animate) return
-    setRevealed(0)
+    if (!animate || totalLines === 0) return
+    setRevealedLines(0)
     let i = 0
     const interval = window.setInterval(() => {
       i++
-      setRevealed(i)
-      if (i >= words.length) window.clearInterval(interval)
-    }, STREAM_GAP_MS)
+      setRevealedLines(i)
+      if (i >= totalLines) window.clearInterval(interval)
+    }, STREAM_LINE_GAP_MS)
     return () => window.clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, animate])
+  }, [text, animate, totalLines])
 
   return (
-    <p className="ovid-drawer-reply">
+    <p className="ovid-drawer-reply" ref={containerRef}>
       {words.map((word, i) => {
         const parsedUrl = parseUrlWord(word)
+        const isRevealed = !animate || (lineOfWord[i] ?? 0) < revealedLines
         return (
           <Fragment key={i}>
-            <span className={`t-stream-w${i < revealed ? ' is-in' : ''}`}>
+            <span className={`t-stream-w${isRevealed ? ' is-in' : ''}`}>
               {parsedUrl ? <LinkChip url={parsedUrl.url} /> : word}
             </span>
             {parsedUrl?.trailing}

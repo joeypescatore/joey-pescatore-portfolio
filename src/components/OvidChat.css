@@ -311,12 +311,12 @@
 }
 
 /* Transitions.dev — Streaming text. Only the reply that just arrived gets
-   its words wrapped and revealed one at a time (see StreamedText in
-   OvidChat.tsx) — restored/historical messages render as plain text,
-   already fully visible. */
+   its words wrapped and revealed a full visual line at a time (see
+   StreamedText in OvidChat.tsx) — restored/historical messages render as
+   plain text, already fully visible. */
 :root {
-  --stream-gap: 60ms;
-  --stream-fade: 350ms;
+  --stream-gap: 70ms;
+  --stream-fade: 180ms;
   --stream-blur: 1px;
   --stream-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
