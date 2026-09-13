@@ -156,7 +156,13 @@ async function logExchange(entry: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ timestamp: new Date().toISOString(), ...entry }),
-      signal: AbortSignal.timeout(3000),
+      // for a real generation this now runs after res.end() (the reply is
+      // only fully known once the stream finishes), and outbound requests
+      // issued after the response has already been sent run measurably
+      // slower on Vercel's infra than ones issued beforehand — 3s was
+      // comfortable when this ran pre-response but was timing out here
+      // consistently once streaming shipped
+      signal: AbortSignal.timeout(8000),
     })
   } catch (err) {
     console.error('Failed to log Ovid exchange', err)
