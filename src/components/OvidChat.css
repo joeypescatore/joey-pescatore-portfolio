@@ -7,7 +7,13 @@
   flex-direction: column;
   width: 420px;
   max-width: 100vw;
+  /* dvh (dynamic viewport height) tracks the actual visible viewport,
+     shrinking when a mobile on-screen keyboard opens — 100vh doesn't, on
+     iOS in particular, which left the input pinned below the visible area
+     (behind the keyboard) whenever it was focused. vh first as a fallback
+     for anything that doesn't understand dvh. */
   height: 100vh;
+  height: 100dvh;
   background-color: #f9f9f9;
   /* reserves room below the floating close button (top: 16px + 32px tall)
      so it never overlaps the welcome content or the first message */
@@ -45,6 +51,14 @@
 
 .ovid-drawer-close:hover {
   background-color: #f4f4f4;
+}
+
+/* which of the two icons inside .ovid-drawer-close actually shows is
+   purely a CSS/breakpoint concern — see the mobile media query at the
+   bottom of this file, and the comment in OvidChat.tsx on why both
+   always render */
+.ovid-drawer-close-icon--mobile {
+  display: none;
 }
 
 /* --- welcome (no messages yet) --- */
@@ -416,7 +430,51 @@
 }
 
 @media (max-width: 480px) {
+  /* a bottom sheet instead of a right-side panel — slides up from the
+     bottom edge instead of in from the right. Only the starting
+     (translateX(100%)) side of the slide needs to change here:
+     .ovid-drawer--visible's settled translateX(0)/translateY(0) look
+     identical (both are just "no transform"), so it already works
+     unchanged for either axis. */
   .ovid-drawer {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: 100vw;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+
+  /* .ovid-drawer--visible's own translateX(0) rule (declared once, near
+     the top of this file, unconditionally) has equal specificity to this
+     block's translateY(100%) above — and loses to it on source order,
+     since this comes later in the file. Restated here so the visible
+     state actually wins on mobile; translateY(0) and translateX(0) are
+     both just "no offset," so this changes nothing about how it settles. */
+  .ovid-drawer--visible {
+    transform: translateY(0);
+  }
+
+  .ovid-drawer-close {
+    left: auto;
+    right: 18px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .ovid-drawer-close-icon--desktop {
+    display: none;
+  }
+
+  .ovid-drawer-close-icon--mobile {
+    display: block;
+  }
+
+  /* clears the home indicator area on notched phones now that this is a
+     bottom-anchored sheet — falls back to the existing 18px on anything
+     that doesn't support env() */
+  .ovid-drawer-input {
+    margin-bottom: max(18px, env(safe-area-inset-bottom));
   }
 }

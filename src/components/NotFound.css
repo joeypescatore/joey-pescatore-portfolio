@@ -13,7 +13,9 @@
   align-items: flex-start;
   gap: 12px;
   width: 500px;
-  max-width: calc(100% - 40px);
+  /* only ever visually matters below 540px (width: 500px wins above
+     that) — 24px each side, the site's mobile side-padding standard */
+  max-width: calc(100% - 48px);
 }
 
 .not-found-eyebrow {

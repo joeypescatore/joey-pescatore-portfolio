@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState, type ComponentType, type FormEvent } from 'react'
 import { IconArrowUp } from '@central-icons-react/round-filled-radius-3-stroke-2/IconArrowUp'
 import { IconSidebarSimpleRightWide } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSidebarSimpleRightWide'
+import { IconCrossMedium } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCrossMedium'
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
 import { IconTelescope } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTelescope'
 import { IconCd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCd'
@@ -485,7 +486,14 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
         }}
         aria-label="Close chat"
       >
-        <IconSidebarSimpleRightWide size={16} color="#8d8d8d" />
+        {/* on mobile the drawer becomes a bottom sheet, not a sidebar, so
+            the sidebar-toggle icon stops making sense there — swapped for
+            a plain X, moved to the top-right, sized up (see the mobile
+            media query in OvidChat.css). Both icons always render; only
+            one is ever visible at a given width, avoiding any JS viewport
+            check for something CSS can already do on its own. */}
+        <IconSidebarSimpleRightWide className="ovid-drawer-close-icon--desktop" size={16} color="#8d8d8d" />
+        <IconCrossMedium className="ovid-drawer-close-icon--mobile" size={20} color="#8d8d8d" />
       </button>
 
       {showWelcome ? (

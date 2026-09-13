@@ -7,7 +7,9 @@
 .post-content {
   position: relative;
   width: 500px;
-  max-width: calc(100% - 40px);
+  /* only ever visually matters below 540px (width: 500px wins above
+     that) — 24px each side, the site's mobile side-padding standard */
+  max-width: calc(100% - 48px);
   margin: 0 auto;
   padding-top: 96px;
   padding-bottom: 140px;
@@ -37,6 +39,14 @@
 
   .post-chapters {
     display: none;
+  }
+}
+
+/* the site's mobile top-padding standard (32px) — deliberately narrower
+   than the 1080px tier above, which still covers tablet widths for now */
+@media (max-width: 480px) {
+  .post-content {
+    padding-top: 32px;
   }
 }
 
