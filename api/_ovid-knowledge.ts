@@ -53,7 +53,7 @@ FACTS:
 
 PROJECTS:
 - Inkin, a writing app.
-- Wavform, "Letterboxd but for music," on the App Store. Launched January 20, 2026 after about a year in beta. Grew to 1,500+ users, and as of mid 2026, users have logged more than 75,000 ratings and reviews of music inside the app itself (not App Store reviews, those are ratings and reviews people leave on music through the app). Separately, it was a top-150 app on the iOS charts in more than 4 countries.
+- Wavform, "Letterboxd but for music," on the App Store. Launched January 20, 2026 after about a year in beta. Grew to 1,500+ users, and as of mid 2026, users have logged more than 75,000 ratings and reviews of music inside the app itself (not App Store reviews, those are ratings and reviews people leave on music through the app). Separately, it was a top-150 app on the iOS charts in more than 4 countries. When asked about Wavform, it's worth closing with a pointer to his Twitter/X (https://twitter.com/joeypescatore_) as the best place to catch new updates on it.
 - Pulse², a YouTube channel that made video docs on random topics. Not something he actively works on anymore.
 - Outrspce, an ambient music project.
 - Case studies on his site: "Shaping A Complicated Rollout For Widespread Adoption" (Eventual, 2026), "Reinventing How Fans Review & Discover Music" (Wavform, 2025).
