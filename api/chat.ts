@@ -2,23 +2,28 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { OVID_SYSTEM_PROMPT } from './_ovid-knowledge.js'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-// swappable without a redeploy — just update the env var in Vercel's dashboard
-const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'
+// swappable without a redeploy — just update the env var in Vercel's dashboard.
+// Switched from openai/gpt-4o-mini: per Artificial Analysis benchmarks,
+// gemini-2.5-flash-lite has ~1.9x the output throughput (282.6 vs 150.2
+// tok/s) and ~3.4x faster time-to-first-token (0.30s vs 1.01s), and is
+// also cheaper (see pricing below) — a straightforward win for a
+// knowledge-base chatbot that doesn't need heavy reasoning.
+const MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash-lite'
 // a generous sanity ceiling on payload size/latency — not the thing that
 // actually decides when a conversation is "done" anymore, see
 // MAX_CONVERSATION_SPEND_USD below for that
 const MAX_HISTORY_MESSAGES = 60
 const MAX_MESSAGE_LENGTH = 600
 // 300 was cutting off longer answers (e.g. the full Ms. Crawford story)
-// before they finished — gpt-4o-mini's output is cheap enough (see pricing
+// before they finished — MODEL's output is cheap enough (see pricing
 // below) that doubling this barely moves the spend estimate
 const MAX_OUTPUT_TOKENS = 600
 
 // $/1M tokens — update these if MODEL changes (current values are
-// openai/gpt-4o-mini's public pricing). This only gates a soft
-// conversational budget, not billing, so it doesn't need to be exact.
-const INPUT_COST_PER_1M_TOKENS = 0.15
-const OUTPUT_COST_PER_1M_TOKENS = 0.6
+// google/gemini-2.5-flash-lite's OpenRouter pricing). This only gates a
+// soft conversational budget, not billing, so it doesn't need to be exact.
+const INPUT_COST_PER_1M_TOKENS = 0.1
+const OUTPUT_COST_PER_1M_TOKENS = 0.4
 // stop the conversation once its estimated cost crosses this, rather than
 // capping by message count (never bring that back — a long conversation of
 // short messages is fine; a few very long ones can still cost more than
@@ -26,9 +31,9 @@ const OUTPUT_COST_PER_1M_TOKENS = 0.6
 // base has grown a fair bit and gets resent in full every single turn, so
 // each turn now costs more than it used to at the same message count —
 // bumped from $0.05 to keep the actual number of messages a visitor gets
-// from feeling smaller than before. Still trivial in aggregate: gpt-4o-mini
-// is cheap enough that even every visitor maxing this out daily wouldn't
-// add up to much.
+// from feeling smaller than before. Still trivial in aggregate: MODEL is
+// cheap enough that even every visitor maxing this out daily wouldn't add
+// up to much.
 const MAX_CONVERSATION_SPEND_USD = 0.1
 
 // crude but consistent estimate (~4 chars/token for English) — no tokenizer
@@ -79,13 +84,57 @@ function looksLikeAbuse(text: string): boolean {
   return ABUSE_PATTERNS.some((pattern) => pattern.test(text))
 }
 
-// the system prompt tells the model never to use an em dash, but that's a
-// soft instruction, not a guarantee — gpt-4o-mini still slips one in
-// occasionally, especially in longer replies. This is the actual
-// guarantee, applied to every real model reply before it ever reaches a
-// visitor or the log.
+// the system prompt tells the model never to use an em dash or markdown
+// emphasis/heading syntax, but those are soft instructions, not
+// guarantees — the model still reaches for **bold**/*italic*/# headers
+// fairly often, especially for "give me a rundown/list" style prompts.
+// This is the actual guarantee, applied to every real model reply before
+// it ever reaches a visitor or the log: the frontend renders plain text
+// only, so any markdown character that got through would otherwise show
+// up as a literal asterisk or hash mark. A plain hyphen/number for a list
+// item is left alone — that's not markdown syntax, it's just a character.
+// Applied per streamed chunk below rather than once on the full text, so
+// a marker pair split across two chunks (rare) can slip through uncaught
+// — an acceptable tradeoff for a cosmetic guarantee, not worth buffering
+// across chunk boundaries to close entirely.
 function sanitizeReply(text: string): string {
-  return text.replace(/\s*—\s*/g, ', ')
+  return text
+    .replace(/\s*—\s*/g, ', ')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '$2')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+}
+
+// OpenRouter streams the same SSE shape OpenAI's chat completions API
+// does: newline-delimited "data: {...}" frames, a blank line between each,
+// occasional ": " comment/keepalive lines, terminated by "data: [DONE]".
+// Calls onDelta with each individual content fragment as it arrives.
+async function streamOpenRouterReply(body: ReadableStream<Uint8Array>, onDelta: (text: string) => void): Promise<void> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) return
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? '' // last entry may be an incomplete line — held for the next chunk
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('data:')) continue
+      const payload = trimmed.slice(5).trim()
+      if (payload === '[DONE]') return
+      try {
+        const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content
+        if (typeof delta === 'string' && delta.length > 0) onDelta(delta)
+      } catch {
+        // malformed/partial frame — nothing usable in it, skip
+      }
+    }
+  }
 }
 
 // optional: a Google Apps Script Web App URL that appends each exchange as
@@ -203,6 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
+        stream: true,
         messages: [{ role: 'system', content: OVID_SYSTEM_PROMPT }, ...messages],
       }),
     })
@@ -219,20 +269,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const data = await upstream.json()
-  const rawReply = data?.choices?.[0]?.message?.content
-  if (typeof rawReply !== 'string' || rawReply.length === 0) {
+  if (!upstream.body) {
     res.status(502).json({ error: 'No response generated' })
     return
   }
-  const reply = sanitizeReply(rawReply)
 
-  await logExchange({
-    conversationId,
-    turn,
-    type: 'normal',
-    userMessage: latestUserMessage?.content ?? '',
-    reply,
-  })
-  res.status(200).json({ reply })
+  // streamed as plain text, not JSON — the frontend appends each chunk
+  // straight into the growing reply as it arrives, so the first words show
+  // up as soon as the model generates them instead of waiting for the
+  // whole reply. The abuse/limit-reached/error paths above stay as plain
+  // JSON responses; only a real model generation streams.
+  res.status(200)
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+
+  let fullReply = ''
+  try {
+    await streamOpenRouterReply(upstream.body, (delta) => {
+      const sanitized = sanitizeReply(delta)
+      fullReply += sanitized
+      res.write(sanitized)
+    })
+  } catch (err) {
+    console.error('Error while streaming OpenRouter reply', err)
+  }
+  res.end()
+
+  if (fullReply.length > 0) {
+    await logExchange({
+      conversationId,
+      turn,
+      type: 'normal',
+      userMessage: latestUserMessage?.content ?? '',
+      reply: fullReply,
+    })
+  }
 }
