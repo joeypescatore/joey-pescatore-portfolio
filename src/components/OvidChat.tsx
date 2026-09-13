@@ -203,17 +203,24 @@ function DrawerWalker({ trackWidth }: { trackWidth: number }) {
 }
 
 const URL_WORD_PATTERN = /^(https?:\/\/|www\.)\S+$/i
-const TRAILING_PUNCTUATION_PATTERN = /[.,!?;:)\]}]+$/
+const LEADING_WRAPPER_PATTERN = /^[([{"']+/
+const TRAILING_PUNCTUATION_PATTERN = /[.,!?;:)\]}"']+$/
 
 // a word straight from message text — full-URL words only (see the system
-// prompt's own rule to always write links out in full), any trailing
-// sentence punctuation split off so it renders outside the chip
-function parseUrlWord(word: string): { url: string; trailing: string } | null {
-  if (!URL_WORD_PATTERN.test(word)) return null
-  const trailingMatch = word.match(TRAILING_PUNCTUATION_PATTERN)
+// prompt's own rule to always write links out in full). Leading/trailing
+// wrapper or sentence punctuation is split off so it renders outside the
+// chip as plain text — without stripping the leading half too, a very
+// natural phrasing like "here (https://...)." would never even reach the
+// URL check at all, since the word doesn't start with http/www.
+function parseUrlWord(word: string): { leading: string; url: string; trailing: string } | null {
+  const leadingMatch = word.match(LEADING_WRAPPER_PATTERN)
+  const leading = leadingMatch ? leadingMatch[0] : ''
+  const rest = leading ? word.slice(leading.length) : word
+  if (!URL_WORD_PATTERN.test(rest)) return null
+  const trailingMatch = rest.match(TRAILING_PUNCTUATION_PATTERN)
   const trailing = trailingMatch ? trailingMatch[0] : ''
-  const url = trailing ? word.slice(0, -trailing.length) : word
-  return { url, trailing }
+  const url = trailing ? rest.slice(0, -trailing.length) : rest
+  return { leading, url, trailing }
 }
 
 // a couple of domains get a bundled local asset instead of the generic
@@ -268,8 +275,15 @@ function renderReplyContent(text: string) {
     const parsedUrl = parseUrlWord(word)
     return (
       <Fragment key={i}>
-        {parsedUrl ? <LinkChip url={parsedUrl.url} /> : word}
-        {parsedUrl?.trailing}
+        {parsedUrl ? (
+          <>
+            {parsedUrl.leading}
+            <LinkChip url={parsedUrl.url} />
+            {parsedUrl.trailing}
+          </>
+        ) : (
+          word
+        )}
         {i < words.length - 1 ? ' ' : ''}
       </Fragment>
     )
