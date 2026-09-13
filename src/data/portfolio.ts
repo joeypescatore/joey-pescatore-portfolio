@@ -18,7 +18,7 @@ export const profile = {
   contactPrefix: 'You can reach me on ',
   twitterLink: { label: 'Twitter/X', href: 'https://x.com/joeypescatore_' },
   linkedinLink: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/joeypescatore' },
-  emailLink: { label: 'email', href: 'mailto:jpesco25@gmail.com' },
+  email: 'jpesco25@gmail.com',
 }
 
 export const experience = [

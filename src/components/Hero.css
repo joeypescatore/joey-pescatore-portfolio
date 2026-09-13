@@ -31,3 +31,40 @@
 .hero-bio-link:hover {
   text-decoration-color: #111111;
 }
+
+.hero-email-copy {
+  position: relative;
+  display: inline-block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* same dark pill look as Ovid's own tooltip (see .sprite-tooltip-pill in
+   Sprite.css), just a plain even radius instead of his speech-bubble
+   tail, and hidden until hovered since there's no first-visit hint need
+   here, just a plain hover affordance */
+.hero-email-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #171717;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms ease;
+}
+
+.hero-email-copy:hover .hero-email-tooltip {
+  opacity: 1;
+}
