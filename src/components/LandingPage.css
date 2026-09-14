@@ -11,22 +11,30 @@
   /* only ever visually matters below 540px (width: 500px wins above
      that) — 24px each side, the site's mobile side-padding standard */
   max-width: calc(100% - 48px);
-  padding-top: 192px;
+  /* top padding is just two tiers, desktop and mobile (see the 768px
+     query below) — matches .post-content in PostPage.css exactly, same
+     breakpoint and values, so the home page and the project/writing
+     pages share one top-padding scale instead of drifting apart */
+  padding-top: 96px;
   padding-bottom: 140px;
   display: flex;
   flex-direction: column;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1080px) {
   .landing-page-column {
-    padding-top: 120px;
     padding-bottom: 100px;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .landing-page-column {
-    padding-top: 72px;
+    padding-top: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-page-column {
     padding-bottom: 72px;
   }
 }

@@ -27,7 +27,6 @@
 
 @media (max-width: 1080px) {
   .post-content {
-    padding-top: 40px;
     padding-bottom: 72px;
   }
 
@@ -42,9 +41,11 @@
   }
 }
 
-/* the site's mobile top-padding standard (32px) — deliberately narrower
-   than the 1080px tier above, which still covers tablet widths for now */
-@media (max-width: 480px) {
+/* top padding is just two tiers, desktop and mobile — matches
+   .landing-page-column in LandingPage.css exactly, same breakpoint and
+   values, so the home page and the project/writing pages share one
+   top-padding scale instead of drifting apart */
+@media (max-width: 768px) {
   .post-content {
     padding-top: 32px;
   }

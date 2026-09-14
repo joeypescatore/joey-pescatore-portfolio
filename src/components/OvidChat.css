@@ -429,7 +429,12 @@
   cursor: default;
 }
 
-@media (max-width: 480px) {
+/* matches the exact width App.css's own .app-panel--shrink switches at —
+   the point where a right-side drawer would otherwise start actually
+   compressing the site's content instead of just overlaying on top of
+   it. Below that width, a right-side panel doesn't make sense anymore
+   either way, so the drawer becomes a bottom sheet instead. */
+@media (max-width: 900px) {
   /* a bottom sheet instead of a right-side panel — slides up from the
      bottom edge instead of in from the right. Only the starting
      (translateX(100%)) side of the slide needs to change here:
