@@ -128,10 +128,14 @@ function App() {
     // mobile Safari colors its own chrome (status bar / bottom toolbar) from
     // this meta tag, not from whatever the page itself is painted — without
     // updating it too, the chrome stays white while the drawer's gray body
-    // shows underneath, breaking the seamless look
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', isOpen ? '#f9f9f9' : '#ffffff')
+    // shows underneath, breaking the seamless look. Safari ignores a plain
+    // setAttribute mutation on the existing node, so the tag is removed and
+    // a fresh one inserted instead.
+    document.querySelector('meta[name="theme-color"]')?.remove()
+    const themeColorMeta = document.createElement('meta')
+    themeColorMeta.setAttribute('name', 'theme-color')
+    themeColorMeta.setAttribute('content', isOpen ? '#f9f9f9' : '#ffffff')
+    document.head.appendChild(themeColorMeta)
   }, [chatPhase])
 
   function handleOpenChat() {
