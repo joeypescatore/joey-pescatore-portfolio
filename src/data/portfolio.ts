@@ -4,6 +4,8 @@ import pulse2Preview from '../assets/pulse2-youtube.png'
 import inkinPreview from '../assets/inkin-thumbnail.jpg'
 import eventualThumbnail from '../assets/eventual/hero.jpg'
 import wavformThumbnail from '../assets/wavform/thumbnail.jpg'
+import mergeThumbnail from '../assets/merge/thumbnail.jpg'
+import mergePreview from '../assets/merge/preview.mp4'
 // import hhwThumbnail from '../assets/hhw/thumbnail.jpg'
 
 export const profile = {
@@ -31,6 +33,7 @@ export const experience = [
 
 type CaseStudy = {
   image: string
+  video?: string
   title: string
   company: string
   year: string
@@ -40,15 +43,22 @@ type CaseStudy = {
 
 export const caseStudies: CaseStudy[] = [
   {
+    image: mergeThumbnail,
+    video: mergePreview,
+    title: 'Skills Management For Employers',
+    company: 'Merge',
+    year: '2026',
+  },
+  {
     image: eventualThumbnail,
-    title: 'Shaping A Complicated Rollout For Widespread Adoption',
+    title: 'Simplifying Complex Pricing Models',
     company: 'Eventual',
     year: '2026',
     slug: 'eventual',
   },
   {
     image: wavformThumbnail,
-    title: 'Reinventing How Fans Review & Discover Music',
+    title: 'Reinventing How Fans Find & Review Music',
     company: 'Wavform',
     year: '2025',
     slug: 'wavform',

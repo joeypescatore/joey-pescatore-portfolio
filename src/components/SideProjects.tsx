@@ -12,7 +12,7 @@ export function SideProjects() {
   return (
     <section id="side-projects" className="side-projects">
       <div className="side-projects-content stagger-in" style={staggerDelay(6)}>
-        <div className="section-label">Fun</div>
+        <div className="section-label">Projects</div>
 
         <div
           className={`side-projects-list${hoveredIndex !== null ? ' is-hovering' : ''}`}

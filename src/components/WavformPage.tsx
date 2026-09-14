@@ -56,7 +56,7 @@ export function WavformPage({ onBack }: { onBack: () => void }) {
           <article className="post-article">
             <header className="post-header">
               <div className="post-date">Wavform · 2025</div>
-              <h1 className="post-title">Reinventing How Fans Track, Review, and Discover Music</h1>
+              <h1 className="post-title">Reinventing How Fans Find & Review Music</h1>
             </header>
 
             <video className="case-study-image" src={heroDemo} loop muted autoPlay playsInline />

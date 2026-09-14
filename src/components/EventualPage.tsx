@@ -53,7 +53,7 @@ export function EventualPage({ onBack }: { onBack: () => void }) {
           <article className="post-article">
             <header className="post-header">
               <div className="post-date">Eventual · 2026</div>
-              <h1 className="post-title">Shaping A Complicated Rollout For Widespread Adoption</h1>
+              <h1 className="post-title">Simplifying Complex Pricing Models</h1>
             </header>
 
             <img className="case-study-image" src={heroImage} alt="Eventual's Premium Lock quote flow shown across desktop and mobile" />

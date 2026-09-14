@@ -86,6 +86,7 @@
   position: fixed;
   width: 200px;
   height: 130px;
+  border: 1px solid transparent;
   border-radius: 12px;
   overflow: hidden;
   pointer-events: none;
@@ -94,7 +95,210 @@
   box-shadow:
     0 12px 24px -8px rgba(0, 0, 0, 0.2),
     0 0 0 1px rgba(0, 0, 0, 0.04);
-  transition: opacity 200ms ease;
+  /* shared by both the plain state and .is-gate below — a class with
+     higher specificity than the bare element selector still only ever
+     wins the whole `transition` shorthand, not a per-property merge, so
+     every property either side needs to animate has to be repeated in
+     both rules */
+  transition:
+    opacity 200ms ease,
+    height 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease,
+    background-color 320ms ease,
+    border-color var(--revert-dur, 280ms) ease-out;
+}
+
+/* the "locked" case study (no slug/href) morphs its preview from the
+   200x130 video card down into a slim password-gate pill — width stays
+   exactly the video's own 200px throughout, only height actually morphs,
+   so hovering back to any other row's video/image just morphs it right
+   back to the normal card size (same transition list above runs in
+   reverse) */
+.case-study-preview.is-gate {
+  height: 32px;
+  border-radius: 8px;
+  overflow: visible;
+  pointer-events: auto;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+}
+
+/* wrong-password flash — the only spot on the site that uses red,
+   deliberately, since this is meant to read like a real failed login */
+.case-study-preview.is-gate.is-error {
+  border-color: #ff3b30;
+}
+
+.case-study-gate-form {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+.case-study-gate-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #111111;
+}
+
+.case-study-gate-input::placeholder {
+  color: #8d8d8d;
+}
+
+/* touch-device version of the password gate — no cursor to morph a
+   floating box out of, so it's a centered modal instead. Reuses
+   .case-study-gate-input for the field itself, and the same shake/error
+   animation (below) on its own wrapper. */
+.case-study-gate-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.case-study-gate-modal {
+  width: 100%;
+  max-width: 320px;
+  padding: 20px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.case-study-gate-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.case-study-gate-modal-title {
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #111111;
+}
+
+/* matches .ovid-drawer-close's own mobile size exactly (36px, since that's
+   the variant it switches to below 900px — this modal only ever shows on
+   touch devices in the first place) minus the absolute positioning, which
+   that one needs and this one, sitting in a normal header row, doesn't */
+.case-study-gate-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.case-study-gate-modal-close:hover {
+  background-color: #f4f4f4;
+}
+
+.case-study-gate-modal-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background-color: #f4f4f4;
+  transition: border-color var(--revert-dur, 280ms) ease-out;
+}
+
+.case-study-gate-modal-input-wrap.is-error {
+  border-color: #ff3b30;
+}
+
+/* iOS Safari auto-zooms the page on focus for any input under 16px —
+   .case-study-gate-input is 14px for the desktop floating gate, so it's
+   bumped here for the mobile modal specifically */
+.case-study-gate-modal-input-wrap .case-study-gate-input {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.case-study-gate-modal-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 7px;
+  background-color: #111111;
+  cursor: pointer;
+}
+
+/* Transitions.dev — error-state shake, borrowed as-is for "wrong password"
+   on every submit (there's no correct one). Per-segment easing so each leg
+   of the shake follows the curve independently — %-stops are cumulative
+   durations as a fraction of the total (80, 60, 80, 60 = 280ms):
+   28.57%, 57.14%, 78.57%, 100%. --revert-hold matches the setTimeout in
+   CaseStudies.tsx that drops .is-error and lets the border fade back. */
+:root {
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --revert-hold: 3000ms;
+  --revert-dur: 280ms;
+}
+
+.case-study-preview.is-shaking,
+.case-study-gate-modal-input-wrap.is-shaking {
+  animation: case-study-gate-shake calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2) linear;
+}
+
+@keyframes case-study-gate-shake {
+  0% {
+    transform: translateX(0);
+    animation-timing-function: var(--shake-ease);
+  }
+  28.57% {
+    transform: translateX(var(--shake-distance));
+    animation-timing-function: var(--shake-ease);
+  }
+  57.14% {
+    transform: translateX(calc(var(--shake-distance) * -1));
+    animation-timing-function: var(--shake-ease);
+  }
+  78.57% {
+    transform: translateX(var(--shake-overshoot));
+    animation-timing-function: var(--shake-ease);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case-study-preview.is-shaking,
+  .case-study-gate-modal-input-wrap.is-shaking {
+    animation: none;
+  }
 }
 
 .case-study-preview.is-visible {
