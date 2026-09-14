@@ -5,12 +5,29 @@ import { IconCrossMedium } from '@central-icons-react/round-filled-radius-3-stro
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
 import { IconLightbulbSparkle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconLightbulbSparkle'
 import { IconCd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCd'
+import { IconArrowRedoDown } from '@central-icons-react/round-filled-radius-3-stroke-2/IconArrowRedoDown'
 import linkedinLogo from '../assets/linkedin-logo.png'
 import { trackVisitorEvent } from '../utils/trackVisitorEvent'
 import './OvidChat.css'
 
-type ChatMessage = { role: 'user' | 'assistant'; content: string }
+type ChatMessage = { role: 'user' | 'assistant'; content: string; suggestion?: string }
 export type ChatPhase = 'opening' | 'drawer-rising' | 'open' | 'closing'
+
+// EXPERIMENTAL, local-only prototype: the model is asked (see
+// api/_ovid-knowledge.ts) to end every normal reply with this exact marker
+// followed by a suggested follow-up question. Split out of the visible text
+// on both the client (never rendered/stored as part of the reply) and
+// before being resent as conversation history, so it never leaks into what
+// the model or the visitor actually sees as Ovid's own words.
+const NEXT_SUGGESTION_MARKER = '@@NEXT@@'
+
+function splitNextSuggestion(raw: string): { reply: string; suggestion?: string } {
+  const markerIndex = raw.indexOf(NEXT_SUGGESTION_MARKER)
+  if (markerIndex === -1) return { reply: raw }
+  const reply = raw.slice(0, markerIndex).trimEnd()
+  const suggestion = raw.slice(markerIndex + NEXT_SUGGESTION_MARKER.length).trim()
+  return { reply, suggestion: suggestion.length > 0 ? suggestion : undefined }
+}
 
 // idle-wander tuning, mirrors Sprite.tsx's own constants exactly so the
 // drawer's walk reads identically to the home page one
@@ -310,6 +327,11 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
   // render below), an empty/growing string once real content starts
   // arriving. Only ever set while sendMessage's own fetch is in flight.
   const [pendingReply, setPendingReply] = useState<string | null>(null)
+  // EXPERIMENTAL, local-only: the in-progress suggestion, same idea as
+  // pendingReply — grows live as soon as the @@NEXT@@ marker shows up
+  // mid-stream, instead of only appearing once the whole response,
+  // suggestion included, has finished generating
+  const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null)
   // the drawer mounts fresh every time it opens, already in the "open" phase —
   // rendering translateX(0) from the very first paint would skip the slide-in
   // transition entirely (a CSS transition only animates a property change
@@ -387,7 +409,13 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, conversationId: rememberedConversationId }),
+        // stripped down to {role, content} only — the suggestion field is
+        // purely a client-side UI concern and has no business going out to
+        // the API or back into the model's own conversation history
+        body: JSON.stringify({
+          messages: next.map(({ role, content }) => ({ role, content })),
+          conversationId: rememberedConversationId,
+        }),
       })
 
       // the abuse/limit-reached/error paths (see api/chat.ts) stay plain
@@ -415,16 +443,25 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
         full += chunk
         // the typing dots (rendered while pendingReply is null) stay up
         // until the very first real chunk arrives, rather than swapping to
-        // an empty bubble the instant the connection opens
-        setPendingReply(full)
+        // an empty bubble the instant the connection opens. Only the part
+        // before the marker (if it's arrived yet) is ever shown, so the
+        // raw "@@NEXT@@..." tail never flashes on screen.
+        const { reply: livePart, suggestion: liveSuggestion } = splitNextSuggestion(full)
+        setPendingReply(livePart)
+        // grows live right alongside the reply instead of only appearing
+        // once the whole stream (suggestion included) finishes — that's
+        // what made it feel like it showed up "late"
+        if (liveSuggestion !== undefined) setPendingSuggestion(liveSuggestion)
       }
       if (full.length === 0) throw new Error('No response generated')
-      setMessages((prev) => [...prev, { role: 'assistant', content: full }])
+      const { reply, suggestion } = splitNextSuggestion(full)
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply, suggestion }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsSending(false)
       setPendingReply(null)
+      setPendingSuggestion(null)
     }
   }
 
@@ -545,12 +582,51 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
                 <div className="ovid-drawer-bubble">{m.content}</div>
               </div>
             ) : (
-              <p key={i} className="ovid-drawer-reply">
-                {renderReplyContent(m.content)}
-              </p>
+              <Fragment key={i}>
+                <p className="ovid-drawer-reply">{renderReplyContent(m.content)}</p>
+                {/* EXPERIMENTAL, local-only: a contextual follow-up suggestion
+                    under Ovid's own reply, styled identically to the premade
+                    prompt chips shown on first open */}
+                {m.suggestion && (
+                  <div className="ovid-drawer-suggestions ovid-drawer-suggestions--inline">
+                    {/* a message sitting in `messages` with a suggestion is
+                        by definition from a fully finished exchange, so
+                        this is never gated on isSending — that was the bug,
+                        it could get stuck looking disabled */}
+                    <button
+                      type="button"
+                      className="ovid-drawer-chip"
+                      onClick={() => {
+                        // it's about to be replaced by the visitor's own
+                        // message, showing up as a reply to a chip nobody
+                        // can see anymore read as a bug, not a feature
+                        const suggestion = m.suggestion!
+                        setMessages((prev) =>
+                          prev.map((msg, idx) => (idx === i ? { ...msg, suggestion: undefined } : msg)),
+                        )
+                        sendMessage(suggestion)
+                      }}
+                    >
+                      <IconArrowRedoDown size={14} color="#8c8c8c" />
+                      {m.suggestion}
+                    </button>
+                  </div>
+                )}
+              </Fragment>
             ),
           )}
           {pendingReply !== null && <p className="ovid-drawer-reply">{renderReplyContent(pendingReply)}</p>}
+          {pendingSuggestion && (
+            <div className="ovid-drawer-suggestions ovid-drawer-suggestions--inline">
+              {/* still streaming in, not a real message yet — a plain div,
+                  not a button, so it can never be mistaken for a clickable
+                  chip that's just stuck */}
+              <div className="ovid-drawer-chip ovid-drawer-chip--pending">
+                <IconArrowRedoDown size={14} color="#8c8c8c" />
+                {pendingSuggestion}
+              </div>
+            </div>
+          )}
           {isSending && pendingReply === null && (
             <div className="ovid-drawer-typing" aria-label="Ovid is typing">
               <span className="ovid-drawer-typing-dot" />

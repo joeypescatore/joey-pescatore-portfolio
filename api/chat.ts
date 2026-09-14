@@ -18,7 +18,10 @@ const MAX_MESSAGE_LENGTH = 600
 // 300 was cutting off longer answers (e.g. the full Ms. Crawford story)
 // before they finished — MODEL's output is cheap enough (see pricing
 // below) that doubling this barely moves the spend estimate
-const MAX_OUTPUT_TOKENS = 600
+// EXPERIMENTAL, local test only: bumped from 600 to leave headroom for the
+// @@NEXT@@ suggestion tail (see _ovid-knowledge.ts) on longer answers,
+// which were otherwise getting cut off before the model ever reached it
+const MAX_OUTPUT_TOKENS = 700
 
 // $/1M tokens — update these if MODEL changes (current values are
 // google/gemini-2.5-flash-lite's OpenRouter pricing). This only gates a
