@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { OVID_SYSTEM_PROMPT } from './_ovid-knowledge.js'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
@@ -84,6 +85,40 @@ function looksLikeAbuse(text: string): boolean {
   return ABUSE_PATTERNS.some((pattern) => pattern.test(text))
 }
 
+// a lot of people just send a bare curse word or slur with nothing else,
+// not an actual question — this deserves a blunt, deterministic dismissal
+// rather than burning a real model call on it. Built on the `obscenity`
+// package's maintained english word dataset rather than a hand-rolled list.
+const profanityMatcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+})
+// short filler words that often ride along with a bare curse ("fuck you",
+// "fuck off") without adding any actual content of their own
+const PROFANITY_FILLER_WORDS = new Set(['you', 'off', 'up', 'u', 'ur', 'the', 'a', 'an', 'is', 'so', 'very', 'just', 'bro', 'dude', 'man', 'yo'])
+
+function isPureProfanity(text: string): boolean {
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+  if (words.length === 0) return false
+  let hasProfaneWord = false
+  for (const word of words) {
+    if (PROFANITY_FILLER_WORDS.has(word)) continue
+    // tested per-word, not against the whole message, so a real word that
+    // merely contains a profane substring (like "class" or "grass") isn't
+    // misflagged the way a raw substring search across the full text would
+    if (profanityMatcher.hasMatch(word)) {
+      hasProfaneWord = true
+      continue
+    }
+    return false // a real, non-filler, non-profane word means it's not pure profanity
+  }
+  return hasProfaneWord
+}
+
 // the system prompt tells the model never to use an em dash or markdown
 // emphasis/heading syntax, but those are soft instructions, not
 // guarantees — the model still reaches for **bold**/*italic*/# headers
@@ -146,7 +181,7 @@ const LOG_WEBHOOK_URL = process.env.OVID_LOG_WEBHOOK_URL
 async function logExchange(entry: {
   conversationId: string
   turn: number
-  type: 'normal' | 'abuse' | 'limit_reached'
+  type: 'normal' | 'abuse' | 'profanity' | 'limit_reached'
   userMessage: string
   reply: string
 }) {
@@ -227,6 +262,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const conversationId = typeof req.body?.conversationId === 'string' ? req.body.conversationId : 'unknown'
   const turn = messages.length
   const latestUserMessage = [...messages].reverse().find((m) => m.role === 'user')
+
+  if (latestUserMessage && isPureProfanity(latestUserMessage.content)) {
+    const reply = '?'
+    await logExchange({ conversationId, turn, type: 'profanity', userMessage: latestUserMessage.content, reply })
+    res.status(200).json({ reply })
+    return
+  }
 
   if (latestUserMessage && looksLikeAbuse(latestUserMessage.content)) {
     const reply = "I'm just here to chat about Joey — ask me about his work, projects, or background!"
