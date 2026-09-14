@@ -151,6 +151,7 @@ async function logExchange(entry: {
   reply: string
 }) {
   if (!LOG_WEBHOOK_URL) return
+  const startedAt = Date.now()
   try {
     await fetch(LOG_WEBHOOK_URL, {
       method: 'POST',
@@ -159,13 +160,14 @@ async function logExchange(entry: {
       // for a real generation this now runs after res.end() (the reply is
       // only fully known once the stream finishes), and outbound requests
       // issued after the response has already been sent run measurably
-      // slower on Vercel's infra than ones issued beforehand — 3s was
-      // comfortable when this ran pre-response but was timing out here
-      // consistently once streaming shipped
-      signal: AbortSignal.timeout(8000),
+      // slower on Vercel's infra than ones issued beforehand. Apps Script
+      // web apps are also just slow to cold-start on their own — bumped
+      // from 8s after that still wasn't enough in production.
+      signal: AbortSignal.timeout(20000),
     })
+    console.log(`Ovid exchange logged in ${Date.now() - startedAt}ms`)
   } catch (err) {
-    console.error('Failed to log Ovid exchange', err)
+    console.error(`Failed to log Ovid exchange after ${Date.now() - startedAt}ms`, err)
   }
 }
 
@@ -184,6 +186,15 @@ function isValidMessage(value: unknown): value is ChatMessage {
   if (typeof v.content !== 'string' || v.content.length === 0) return false
   if (v.role === 'user' && v.content.length > MAX_MESSAGE_LENGTH) return false
   return true
+}
+
+// Vercel's default function duration (10s) was almost certainly the real
+// cause of the Google Sheet logging webhook timing out in production: the
+// streamed reply itself eats into that budget before logExchange's
+// post-response fetch to Apps Script even starts, leaving too little time
+// left over. Raised well above the 8-20s that logExchange itself allows for.
+export const config = {
+  maxDuration: 30,
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
