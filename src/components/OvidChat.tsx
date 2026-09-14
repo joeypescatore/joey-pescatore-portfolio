@@ -3,7 +3,7 @@ import { IconArrowUp } from '@central-icons-react/round-filled-radius-3-stroke-2
 import { IconSidebarSimpleRightWide } from '@central-icons-react/round-filled-radius-3-stroke-2/IconSidebarSimpleRightWide'
 import { IconCrossMedium } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCrossMedium'
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
-import { IconTelescope } from '@central-icons-react/round-filled-radius-3-stroke-2/IconTelescope'
+import { IconCompassRound } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCompassRound'
 import { IconCd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCd'
 import linkedinLogo from '../assets/linkedin-logo.png'
 import { trackVisitorEvent } from '../utils/trackVisitorEvent'
@@ -54,7 +54,7 @@ const SUGGESTIONS: {
   event: string
 }[] = [
   { icon: IconUserAdd, text: "I'm a hiring manager, what should I know?", event: 'ovid_chip_hiring_manager' },
-  { icon: IconTelescope, text: 'What side projects has he worked on?', event: 'ovid_chip_side_projects' },
+  { icon: IconCompassRound, text: "What's Joey's design philosophy?", event: 'ovid_chip_design_philosophy' },
   { icon: IconCd, text: "How's Wavform going?", event: 'ovid_chip_wavform' },
 ]
 
