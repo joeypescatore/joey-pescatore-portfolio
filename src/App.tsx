@@ -123,7 +123,15 @@ function App() {
   // is open or transitioning, so a rubber-band overscroll bounce on the
   // closed home page never reveals gray
   useEffect(() => {
-    document.body.classList.toggle('ovid-chat-open', chatPhase !== 'closed')
+    const isOpen = chatPhase !== 'closed'
+    document.body.classList.toggle('ovid-chat-open', isOpen)
+    // mobile Safari colors its own chrome (status bar / bottom toolbar) from
+    // this meta tag, not from whatever the page itself is painted — without
+    // updating it too, the chrome stays white while the drawer's gray body
+    // shows underneath, breaking the seamless look
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', isOpen ? '#f9f9f9' : '#ffffff')
   }, [chatPhase])
 
   function handleOpenChat() {

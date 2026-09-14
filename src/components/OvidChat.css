@@ -482,4 +482,11 @@
   .ovid-drawer-input {
     margin-bottom: max(18px, env(safe-area-inset-bottom));
   }
+
+  /* iOS Safari auto-zooms the page on focus for any input under 16px —
+     bumped only here so the desktop/tablet type scale stays untouched */
+  .ovid-drawer-input-field {
+    font-size: 16px;
+    line-height: 22px;
+  }
 }
