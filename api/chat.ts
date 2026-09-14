@@ -136,6 +136,14 @@ function sanitizeReply(text: string): string {
   return text
     .replace(/\s*—\s*/g, ', ')
     .replace(/^#{1,6}\s+/gm, '')
+    // a markdown bullet asterisk ("* item") at the start of a line is a
+    // single, unpaired "*" — the **bold**/*italic* rules below only ever
+    // match pairs, so this slipped through untouched every time the model
+    // used "*" instead of "-" for a list, unlike the paired-marker cases
+    // those rules do catch. Converted to a hyphen rather than just
+    // stripped, matching the site's own "plain hyphen for a list item is
+    // fine" convention.
+    .replace(/^\*(\s+)/gm, '-$1')
     .replace(/\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '$2')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')
