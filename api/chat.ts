@@ -263,16 +263,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const turn = messages.length
   const latestUserMessage = [...messages].reverse().find((m) => m.role === 'user')
 
+  // these three are plain, deterministic canned replies — no LLM call, so
+  // there's no reason a visitor should ever wait on them. logExchange isn't
+  // awaited here (unlike the real-generation path below, which needs the
+  // ordering it has): its own webhook call can take up to 20s on a slow
+  // Apps Script cold start, and awaiting it was making an otherwise-instant
+  // reply visibly hang for that entire time. Firing it in the background
+  // risks Vercel tearing down the function before it finishes on real
+  // infra, occasionally losing one of these log rows — an acceptable
+  // tradeoff for a low-stakes canned reply, unlike a real conversation.
   if (latestUserMessage && isPureProfanity(latestUserMessage.content)) {
     const reply = '?'
-    await logExchange({ conversationId, turn, type: 'profanity', userMessage: latestUserMessage.content, reply })
+    void logExchange({ conversationId, turn, type: 'profanity', userMessage: latestUserMessage.content, reply })
     res.status(200).json({ reply })
     return
   }
 
   if (latestUserMessage && looksLikeAbuse(latestUserMessage.content)) {
     const reply = "I'm just here to chat about Joey — ask me about his work, projects, or background!"
-    await logExchange({ conversationId, turn, type: 'abuse', userMessage: latestUserMessage.content, reply })
+    void logExchange({ conversationId, turn, type: 'abuse', userMessage: latestUserMessage.content, reply })
     // a normal 200 with a canned reply, not an error — the frontend renders
     // this exactly like any other Ovid message, no special-casing needed
     res.status(200).json({ reply })
@@ -281,7 +290,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (estimateConversationSpendUsd(messages) >= MAX_CONVERSATION_SPEND_USD) {
     const reply = "That's a good stopping point for this conversation!"
-    await logExchange({
+    void logExchange({
       conversationId,
       turn,
       type: 'limit_reached',

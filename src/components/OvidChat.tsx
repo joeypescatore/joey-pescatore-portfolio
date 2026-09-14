@@ -28,11 +28,19 @@ async function fetchSuggestion(messages: ChatMessage[]): Promise<string | undefi
     const res = await fetch('/api/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: messages.map(({ role, content }) => ({ role, content })) }),
+      body: JSON.stringify({
+        messages: messages.map(({ role, content }) => ({ role, content })),
+        // EXPERIMENTAL, local-only: everything already suggested this
+        // session, so the model can actively avoid repeating (or just
+        // rephrasing) one instead of only ever seeing the current message
+        alreadyCovered: rememberedCoveredTopics,
+      }),
     })
     if (!res.ok) return undefined
     const data = await res.json()
-    return typeof data?.suggestion === 'string' && data.suggestion.length > 0 ? data.suggestion : undefined
+    const suggestion = typeof data?.suggestion === 'string' && data.suggestion.length > 0 ? data.suggestion : undefined
+    if (suggestion) rememberedCoveredTopics = [...rememberedCoveredTopics, suggestion]
+    return suggestion
   } catch {
     // best-effort only — never let a failed/slow suggestion call affect
     // the actual chat
@@ -66,6 +74,15 @@ let rememberedLimitReached = false
 // (first message of a new rememberedMessages, or "Start a new
 // conversation"), not on every close/reopen of an existing one
 let rememberedConversationId = crypto.randomUUID()
+// EXPERIMENTAL, local-only: every question the visitor has actually asked
+// AND every suggestion chip ever shown this session (whether clicked or
+// not), so a later suggestion request can be explicitly told not to
+// repeat one, even one from several turns back. The conversation transcript
+// technically already contains the asked questions, so the model could in
+// theory notice on its own — but it didn't reliably, hence tracking these
+// separately and calling them out explicitly rather than trusting it to
+// cross-reference a paragraph of transcript against its own new answer.
+let rememberedCoveredTopics: string[] = []
 
 // one fixed size for Ovid everywhere in and around the drawer (header,
 // welcome icon) — matches the Hero sprite's own size (see Sprite.css) and
@@ -452,6 +469,10 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
     setIsSending(true)
     setPendingReply(null)
     suggestionRef.current = undefined
+    // whatever's actually being asked right now is just as much "already
+    // covered" as a previously-shown suggestion — see the comment on
+    // rememberedCoveredTopics above
+    rememberedCoveredTopics = [...rememberedCoveredTopics, text]
     // fired the instant the question goes out, running fully in parallel
     // with the main reply below — resolves in ~1-2s, well before a
     // multi-paragraph streamed answer typically finishes, so by the time
@@ -484,8 +505,19 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
       if (isJson) {
         const data = await res.json()
         if (!res.ok) throw new Error(data?.error || 'Something went wrong')
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
-        if (data.limitReached) setLimitReached(true)
+        if (data.limitReached) {
+          // the conversation's locked either way (see the isSending ||
+          // limitReached guard up top), so a chip here would just be a
+          // dead button that does nothing when clicked
+          setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
+          setLimitReached(true)
+        } else {
+          // the abuse/profanity canned-reply paths previously returned
+          // here without ever reaching a suggestion, meaning this
+          // message could never get one — not "slow," just permanently
+          // stuck waiting on a chip that was never coming
+          appendFinalMessage(data.reply, suggestionPromise)
+        }
         return
       }
 
@@ -552,6 +584,7 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
     setError(null)
     setLimitReached(false)
     rememberedConversationId = crypto.randomUUID()
+    rememberedCoveredTopics = []
   }
 
   const isVisible = entered && phase !== 'closing'

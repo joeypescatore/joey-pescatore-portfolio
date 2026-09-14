@@ -41,15 +41,60 @@ const FALLBACK_SUGGESTIONS = [
   "How's Wavform going?",
 ]
 
-function pickFallbackSuggestion(messages: ChatMessage[]): string {
+function pickFallbackSuggestion(messages: ChatMessage[], alreadyCovered: string[]): string {
   const lastUserMessage = [...messages]
     .reverse()
-    .find((m) => m.role === 'user')
-    ?.content.trim()
-    .toLowerCase()
-  // don't fall back to suggesting the exact same thing just asked
-  const candidates = FALLBACK_SUGGESTIONS.filter((s) => s.toLowerCase() !== lastUserMessage)
+    .find((m) => m.role === 'user')?.content
+  const covered = lastUserMessage ? [lastUserMessage, ...alreadyCovered] : alreadyCovered
+  // don't fall back to suggesting the exact same thing (or a close
+  // rephrasing of it) just asked, or anything already asked/suggested
+  // earlier this session
+  const candidates = FALLBACK_SUGGESTIONS.filter((s) => !covered.some((prev) => isTooSimilar(prev, s)))
   return candidates[Math.floor(Math.random() * candidates.length)] ?? FALLBACK_SUGGESTIONS[0]
+}
+
+// common enough in almost any question that they're useless for telling
+// two questions apart — stripped before comparing so "What was his role at
+// Merge?" and "What was Joey's role at Merge?" compare on {role, merge} vs
+// {joey, role, merge} instead of being diluted by words both share anyway
+const STOPWORDS = new Set([
+  'what', 'whats', 'was', 'were', 'is', 'are', 'did', 'does', 'do', 'the', 'a', 'an', 'of', 'at', 'in', 'on', 'to',
+  'for', 'his', 'her', 'he', 'she', 'it', 'its', 'about', 'how', 'who', 'and', 'with', 'that', 'this',
+])
+
+// naive plural/possessive stemming — punctuation is stripped before this
+// ever runs, so a casually-typed "whats joeys design philosophy" (no
+// apostrophes at all) and a properly-punctuated "What's Joey's design
+// philosophy?" would otherwise tokenize to "joeys" vs "joey", two
+// different strings for the same word, which was enough to dodge the
+// similarity check on an otherwise obvious repeat
+function stem(word: string): string {
+  return word.length > 3 && word.endsWith('s') ? word.slice(0, -1) : word
+}
+
+function significantWords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !STOPWORDS.has(w))
+      .map(stem),
+  )
+}
+
+// exact-match only catches literal repeats, not a close rephrasing like
+// "What was his role at Merge?" vs "What was Joey's role at Merge?" — this
+// compares what's actually distinctive about each question (their
+// significant, non-filler words) rather than the literal string
+function isTooSimilar(a: string, b: string): boolean {
+  const wordsA = significantWords(a)
+  const wordsB = significantWords(b)
+  if (wordsA.size === 0 || wordsB.size === 0) return false
+  let intersection = 0
+  for (const w of wordsA) if (wordsB.has(w)) intersection++
+  const union = new Set([...wordsA, ...wordsB]).size
+  return intersection / union >= 0.6
 }
 
 // backstop for when the model ignores the prompt's own rules anyway —
@@ -82,8 +127,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     messages.length <= MAX_HISTORY_MESSAGES &&
     messages.every(isValidMessage)
 
+  // EXPERIMENTAL, local-only: every question the visitor has actually
+  // asked AND every suggestion already shown this session (see
+  // OvidChat.tsx), so this can actively avoid repeating one instead of
+  // only ever seeing the current message in isolation. Capped defensively;
+  // a real session is never going to approach this many entries.
+  const rawAlreadyCovered = req.body?.alreadyCovered
+  const alreadyCovered: string[] = Array.isArray(rawAlreadyCovered)
+    ? rawAlreadyCovered.filter((s): s is string => typeof s === 'string').slice(-30)
+    : []
+
   if (!apiKey || !messagesValid) {
-    res.status(200).json({ suggestion: pickFallbackSuggestion(messagesValid ? messages : []) })
+    res.status(200).json({ suggestion: pickFallbackSuggestion(messagesValid ? messages : [], alreadyCovered) })
     return
   }
 
@@ -94,6 +149,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // the model just answer it directly instead of suggesting a follow-up,
   // since nothing marked this apart from a normal chat turn
   const transcript = messages.map((m: ChatMessage) => `${m.role === 'user' ? 'Visitor' : 'Ovid'}: ${m.content}`).join('\n')
+  const alreadyCoveredBlock =
+    alreadyCovered.length > 0
+      ? `\n\nQuestions already asked or suggested earlier in this same session (never repeat or closely rephrase any of these):\n${alreadyCovered.map((s) => `- ${s}`).join('\n')}`
+      : ''
 
   try {
     const upstream = await fetch(OPENROUTER_URL, {
@@ -112,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           { role: 'system', content: OVID_SYSTEM_PROMPT },
           {
             role: 'user',
-            content: `Here is a conversation transcript between a visitor and Ovid, Joey Pescatore's portfolio assistant:\n\n${transcript}\n\n${OVID_SUGGESTION_TASK}`,
+            content: `Here is a conversation transcript between a visitor and Ovid, Joey Pescatore's portfolio assistant:\n\n${transcript}${alreadyCoveredBlock}\n\n${OVID_SUGGESTION_TASK}`,
           },
         ],
       }),
@@ -122,16 +181,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     if (!upstream.ok) {
-      res.status(200).json({ suggestion: pickFallbackSuggestion(messages) })
+      res.status(200).json({ suggestion: pickFallbackSuggestion(messages, alreadyCovered) })
       return
     }
 
     const data = await upstream.json()
     const suggestion = data?.choices?.[0]?.message?.content?.trim()
-    const valid = typeof suggestion === 'string' && isValidSuggestion(suggestion)
-    res.status(200).json({ suggestion: valid ? suggestion : pickFallbackSuggestion(messages) })
+    // backstop for the "never repeat" instruction above in case the model
+    // ignores it anyway — an exact match or a close rephrasing (see
+    // isTooSimilar) of anything already asked/suggested this session gets
+    // treated the same as any other invalid suggestion, falling back
+    // rather than showing something that reads as a repeat
+    const isRepeat = typeof suggestion === 'string' && alreadyCovered.some((prev) => isTooSimilar(prev, suggestion))
+    const valid = typeof suggestion === 'string' && isValidSuggestion(suggestion) && !isRepeat
+    res.status(200).json({ suggestion: valid ? suggestion : pickFallbackSuggestion(messages, alreadyCovered) })
   } catch (err) {
     console.error('suggest endpoint failed', err)
-    res.status(200).json({ suggestion: pickFallbackSuggestion(messages) })
+    res.status(200).json({ suggestion: pickFallbackSuggestion(messages, alreadyCovered) })
   }
 }
