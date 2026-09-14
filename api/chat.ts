@@ -353,6 +353,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Error while streaming OpenRouter reply', err)
   }
 
+  // EXPERIMENTAL, local test only, remove before this ever ships: every
+  // real content chunk has already been written by this point, but
+  // res.end() below is intentionally delayed until logExchange finishes
+  // (see that comment). That delay used to be invisible to the client
+  // since it only cared about content, all of which had already arrived —
+  // but the suggestion-chip prototype (OvidChat.tsx) waits for the stream
+  // to fully close before finalizing, which made this same delay show up
+  // as the suggestion arriving late. This sentinel tells the client "the
+  // real content is done" immediately, so it can finalize right away
+  // without waiting on logExchange or the actual connection teardown.
+  res.write(' OVID_DONE ')
+
   // logged before ending the response, not after — Vercel's runtime
   // appears to start tearing down the function environment as soon as
   // res.end() is called on a streamed response, which was silently

@@ -5,12 +5,40 @@ import { IconCrossMedium } from '@central-icons-react/round-filled-radius-3-stro
 import { IconUserAdd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconUserAdd'
 import { IconLightbulbSparkle } from '@central-icons-react/round-filled-radius-3-stroke-2/IconLightbulbSparkle'
 import { IconCd } from '@central-icons-react/round-filled-radius-3-stroke-2/IconCd'
+import { IconArrowRedoDown } from '@central-icons-react/round-filled-radius-3-stroke-2/IconArrowRedoDown'
 import linkedinLogo from '../assets/linkedin-logo.png'
 import { trackVisitorEvent } from '../utils/trackVisitorEvent'
 import './OvidChat.css'
 
-type ChatMessage = { role: 'user' | 'assistant'; content: string }
+type ChatMessage = { role: 'user' | 'assistant'; content: string; suggestion?: string }
 export type ChatPhase = 'opening' | 'drawer-rising' | 'open' | 'closing'
+
+// EXPERIMENTAL, local-only prototype: never push this past localhost.
+// Fired in parallel with the main /api/chat request (see sendMessage), not
+// appended after it — a separate, much smaller/faster completion (see
+// api/suggest.ts) whose only job is guessing one good follow-up question.
+// A trailing-marker approach was tried first and dropped: appending the
+// suggestion to the end of the same streamed answer means it can only ever
+// arrive after the full answer finishes, by definition, since it's the
+// same sequential stream of tokens. This one starts computing at the same
+// moment as the answer, so it's usually already resolved by the time the
+// answer finishes streaming.
+async function fetchSuggestion(messages: ChatMessage[]): Promise<string | undefined> {
+  try {
+    const res = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messages.map(({ role, content }) => ({ role, content })) }),
+    })
+    if (!res.ok) return undefined
+    const data = await res.json()
+    return typeof data?.suggestion === 'string' && data.suggestion.length > 0 ? data.suggestion : undefined
+  } catch {
+    // best-effort only — never let a failed/slow suggestion call affect
+    // the actual chat
+    return undefined
+  }
+}
 
 // idle-wander tuning, mirrors Sprite.tsx's own constants exactly so the
 // drawer's walk reads identically to the home page one
@@ -310,6 +338,15 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
   // render below), an empty/growing string once real content starts
   // arriving. Only ever set while sendMessage's own fetch is in flight.
   const [pendingReply, setPendingReply] = useState<string | null>(null)
+  // EXPERIMENTAL, local-only: holds the suggestion the moment its own
+  // (much faster, ~1-2s) request resolves, independent of React's render
+  // timing. Deliberately NOT rendered live while the reply is still
+  // streaming — that pushed the growing reply text down mid-stream, and
+  // since it could appear before isSending flipped back to false, clicking
+  // it hit sendMessage's own isSending guard and silently did nothing. It
+  // only ever surfaces once attached to the finalized message below, which
+  // by construction can't happen until isSending is already false again.
+  const suggestionRef = useRef<string | undefined>(undefined)
   // the drawer mounts fresh every time it opens, already in the "open" phase —
   // rendering translateX(0) from the very first paint would skip the slide-in
   // transition entirely (a CSS transition only animates a property change
@@ -375,19 +412,69 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  async function sendMessage(text: string) {
+  // EXPERIMENTAL, local-only: appends the finished reply, attaching the
+  // suggestion if it's already resolved. If it isn't yet — a short/fast
+  // reply can finish streaming before the suggestion call (which always
+  // takes a beat regardless of the reply's own length) has landed — this
+  // patches it into the message once it does, using this exact message
+  // object's identity to find it again rather than an array index, which
+  // could point at the wrong message if another one was sent by then.
+  // Without this, that race meant the suggestion sometimes never appeared
+  // at all, purely depending on which finished first, even though the
+  // suggestion call itself had actually succeeded a moment later.
+  function appendFinalMessage(content: string, suggestionPromise: Promise<string | undefined>) {
+    const message: ChatMessage = { role: 'assistant', content, suggestion: suggestionRef.current }
+    setMessages((prev) => [...prev, message])
+    if (message.suggestion === undefined) {
+      suggestionPromise.then((suggestion) => {
+        if (!suggestion) return
+        setMessages((prev) => prev.map((m) => (m === message ? { ...m, suggestion } : m)))
+      })
+    }
+  }
+
+  // clearSuggestionAt lets a suggestion-chip click clear that message's own
+  // suggestion field in the SAME setMessages call that appends the new
+  // user message, instead of two separate calls — two calls raced: the
+  // second one (built from sendMessage's own stale `messages` closure, read
+  // before the first call's clear had actually applied) was silently
+  // clobbering the first, so the chip never actually disappeared
+  async function sendMessage(text: string, clearSuggestionAt?: number) {
     if (!text || isSending || limitReached) return
-    const next: ChatMessage[] = [...messages, { role: 'user', content: text }]
+    const base =
+      typeof clearSuggestionAt === 'number'
+        ? messages.map((msg, idx) => (idx === clearSuggestionAt ? { ...msg, suggestion: undefined } : msg))
+        : messages
+    const next: ChatMessage[] = [...base, { role: 'user', content: text }]
     setMessages(next)
     setInput('')
     setError(null)
     setIsSending(true)
     setPendingReply(null)
+    suggestionRef.current = undefined
+    // fired the instant the question goes out, running fully in parallel
+    // with the main reply below — resolves in ~1-2s, well before a
+    // multi-paragraph streamed answer typically finishes, so by the time
+    // that reply is done streaming this has almost always already landed.
+    // For a short/fast answer though, it can still occasionally still be
+    // in flight right when the reply finishes — kept as its own promise
+    // (not just the ref) so a late arrival can still patch the already-
+    // finalized message afterward instead of just being dropped.
+    const suggestionPromise = fetchSuggestion(next)
+    suggestionPromise.then((suggestion) => {
+      suggestionRef.current = suggestion
+    })
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, conversationId: rememberedConversationId }),
+        // stripped down to {role, content} only — the suggestion field is
+        // purely a client-side UI concern and has no business going out to
+        // the API or back into the model's own conversation history
+        body: JSON.stringify({
+          messages: next.map(({ role, content }) => ({ role, content })),
+          conversationId: rememberedConversationId,
+        }),
       })
 
       // the abuse/limit-reached/error paths (see api/chat.ts) stay plain
@@ -407,19 +494,40 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let full = ''
+      let finalized = false
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         if (chunk.length === 0) continue
         full += chunk
+        // EXPERIMENTAL, local-only: api/chat.ts writes this the instant the
+        // real content is done, before it goes on to log the exchange and
+        // only then actually close the connection (that logging call can
+        // take a few seconds — see the comment by its own res.write call).
+        // Without this, finalizing only on the reader's real done:true
+        // meant that same delay, previously invisible since all the content
+        // had already arrived, started showing up as the suggestion
+        // landing late relative to what's already fully visible on screen.
+        const sentinelIndex = full.indexOf(' OVID_DONE ')
+        if (sentinelIndex !== -1) {
+          const finalReply = full.slice(0, sentinelIndex)
+          setPendingReply(finalReply)
+          appendFinalMessage(finalReply, suggestionPromise)
+          finalized = true
+          break
+        }
         // the typing dots (rendered while pendingReply is null) stay up
         // until the very first real chunk arrives, rather than swapping to
         // an empty bubble the instant the connection opens
         setPendingReply(full)
       }
-      if (full.length === 0) throw new Error('No response generated')
-      setMessages((prev) => [...prev, { role: 'assistant', content: full }])
+      if (!finalized) {
+        if (full.length === 0) throw new Error('No response generated')
+        // fallback for the abuse/limit-reached/error paths or anything
+        // that didn't include the sentinel for some reason
+        appendFinalMessage(full, suggestionPromise)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -545,9 +653,27 @@ export function OvidChat({ phase, onClose }: { phase: ChatPhase; onClose: () => 
                 <div className="ovid-drawer-bubble">{m.content}</div>
               </div>
             ) : (
-              <p key={i} className="ovid-drawer-reply">
-                {renderReplyContent(m.content)}
-              </p>
+              <Fragment key={i}>
+                <p className="ovid-drawer-reply">{renderReplyContent(m.content)}</p>
+                {/* EXPERIMENTAL, local-only: a contextual follow-up suggestion
+                    under Ovid's own reply, styled identically to the premade
+                    prompt chips shown on first open. Only ever rendered once
+                    the reply it belongs to is fully finished, so it's always
+                    immediately clickable, no disabled/loading state to show
+                    or transition out of. */}
+                {m.suggestion && (
+                  <div className="ovid-drawer-suggestions ovid-drawer-suggestions--inline">
+                    <button
+                      type="button"
+                      className="ovid-drawer-chip"
+                      onClick={() => sendMessage(m.suggestion!, i)}
+                    >
+                      <IconArrowRedoDown size={14} color="#8c8c8c" />
+                      {m.suggestion}
+                    </button>
+                  </div>
+                )}
+              </Fragment>
             ),
           )}
           {pendingReply !== null && <p className="ovid-drawer-reply">{renderReplyContent(pendingReply)}</p>}

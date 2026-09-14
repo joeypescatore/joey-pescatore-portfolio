@@ -169,6 +169,14 @@
   gap: 8px;
 }
 
+/* EXPERIMENTAL, local-only: the same chip, but sitting left-aligned under
+   one specific reply in the message list instead of centered in the empty
+   welcome state */
+.ovid-drawer-suggestions--inline {
+  align-items: flex-start;
+  margin-top: -6px;
+}
+
 .ovid-drawer-chip {
   display: flex;
   align-items: center;
