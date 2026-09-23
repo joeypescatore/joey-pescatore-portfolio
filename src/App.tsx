@@ -11,6 +11,7 @@ import { WavformPage } from './components/WavformPage'
 import { NotFound } from './components/NotFound'
 import { posts } from './data/posts'
 import { trackVisitorEvent } from './utils/trackVisitorEvent'
+import { trackPageView } from './utils/trackPageView'
 import './App.css'
 
 type AppChatPhase = 'closed' | 'sinking' | ChatPhase | 'rising'
@@ -56,6 +57,7 @@ function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    trackPageView(pathname)
   }, [pathname])
   return null
 }
