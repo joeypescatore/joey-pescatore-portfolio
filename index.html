@@ -39,21 +39,8 @@
     <meta name="twitter:image" content="https://www.joeypescatore.com/og-image.png" />
     <meta name="twitter:site" content="@joeypescatore_" />
 
-    <script src="https://cdn.visitors.now/v.js" data-token="d69f7201-36b8-4915-861d-38f8bbd132b9"></script>
-
-    <!-- Google Analytics. send_page_view is off because this is a client-side
-         routed SPA — the initial load's pageview would otherwise be the only
-         one GA ever sees. Route changes are tracked manually instead, see
-         src/utils/trackPageView.ts and its call site in App.tsx. -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCLF8HHM8M"></script>
-    <script>
-      window.dataLayer = window.dataLayer || []
-      function gtag() {
-        dataLayer.push(arguments)
-      }
-      gtag('js', new Date())
-      gtag('config', 'G-ZCLF8HHM8M', { send_page_view: false })
-    </script>
+    <!-- PostHog is initialized in src/utils/posthog.ts, not here — it's a
+         real npm dependency (posthog-js), not a plain <script> tag. -->
   </head>
   <body>
     <div id="root"></div>
